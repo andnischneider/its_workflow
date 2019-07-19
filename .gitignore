@@ -2,3 +2,7 @@ data
 *.Rproj
 .Rproj.user
 results
+Comparison_cache
+Comparison_files
+logs
+.#*
