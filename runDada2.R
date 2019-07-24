@@ -2,12 +2,13 @@
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) != 2) {
-  stop('usage: runDada2.R <Forward filtered> <Reverse filtered>')
+if (length(args) != 3) {
+  stop('usage: runDada2.R <Forward filtered> <Reverse filtered> <Output dir>')
 }
 
 fw <- args[1]
 rv <- args[2]
+out <- args[3]
 
 library(dada2); packageVersion("dada2")
 library(here)
@@ -29,17 +30,31 @@ errR <- learnErrors(filtRs, multithread=TRUE) #nbases=1e8,
 # Sample inference and merger of paired-end reads
 mergers <- vector("list", length(sample.names))
 names(mergers) <- sample.names
+
+#Additional step to also collect dada info
+dadas_f <- vector("list", length(sample.names))
+names(dadas_f) <- sample.names
+dadas_r <- vector("list", length(sample.names))
+names(dadas_r) <- sample.names
+
 for(sam in sample.names) {
   cat("Processing:", sam, "\n")
   derepF <- derepFastq(filtFs[[sam]])
   ddF <- dada(derepF, err=errF, multithread=TRUE)
+  dadas_f[[sam]] <- ddF
   derepR <- derepFastq(filtRs[[sam]])
   ddR <- dada(derepR, err=errR, multithread=TRUE)
+  dadas_r[[sam]] <- ddR
   merger <- mergePairs(ddF, derepF, ddR, derepR)
   mergers[[sam]] <- merger
 }
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab <- makeSequenceTable(mergers)
-dir.create(here("data/R_files/dada2"))
-saveRDS(seqtab, here("data/R_files/dada2/seqtab.rds")) # CHANGE ME to where you want sequence table saved
+dir.create(out, recursive = TRUE)
+
+saveRDS(dadas_f, here(paste0(out, "/dada_f.rds")))
+saveRDS(dadas_r, here(paste0(out, "/dada_r.rds")))
+saveRDS(seqtab, here(paste0(out, "/seqtab.rds")))
+
+
