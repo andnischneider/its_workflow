@@ -1,0 +1,309 @@
+---
+title: "dada2 preprocessing of 2012 data"
+author: "Andreas Schneider"
+date: "18/07/2019"
+output:
+  rmarkdown::html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    theme: "spacelab"
+    highlight: textmate
+    df_print: paged
+    code_folding: hide
+    self_contained: false
+    keep_md: false
+    encoding: "UTF-8"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r import}
+suppressMessages(library(here)) 
+suppressMessages(library(dada2))
+suppressMessages(library(ShortRead))
+suppressMessages(library(Biostrings))
+```
+
+# Introduction
+
+The data will be imported into R and clustered to ASV (amplicon sequencing variants) with the help of the dada2 R package
+
+# Import of Data
+
+Here the data is imported into R, and a quality check performed on some of the samples.
+
+## 16S
+
+### Needles
+```{r cache=TRUE}
+path_n <- here("data/16S/Needles/DeML_pooled/")
+
+fnFs_n <- sort(list.files(path_n, pattern = "R1.fastq.gz", full.names = TRUE))
+fnRs_n <- sort(list.files(path_n, pattern = "R2.fastq.gz", full.names = TRUE))
+
+sample.names_n <- sapply(strsplit(basename(fnFs_n), "_"), `[`, 1)
+
+plotQualityProfile(fnFs_n[1:4])
+plotQualityProfile(fnRs_n[1:4])
+```
+
+The quality scores drop below 30 on average around 150, and we need more than 150bp per read for them to overlap properly. Thus we choose an (arbitrary) cutoff at 190 for both.
+
+In the next step we create a folder and filenames for the filtered files, and perform the actual filtering. Since this step is relatively fast we can run it inside the Rmarkdown document.
+
+```{r cache=TRUE}
+filtFs_n <- file.path(path_n, "filtered_F", paste0(sample.names_n, "_F_filt.fastq.gz"))
+filtRs_n <- file.path(path_n, "filtered_R", paste0(sample.names_n, "_R_filt.fastq.gz"))
+names(filtFs_n) <- sample.names_n
+names(filtRs_n) <- sample.names_n
+
+out_n <- filterAndTrim(fnFs_n, filtFs_n, fnRs_n, filtRs_n, truncLen=c(190,190),
+                     maxN=0, maxEE=c(3,3), truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=TRUE)
+head(out_n, n = 10)
+
+```
+
+The Error estimation and ASV clustering takes a long time and is run via slurm. Run the script rundada2.sh either in a terminal, ideally submitted to SLURM.
+
+### Roots
+
+```{r cache=TRUE}
+path_r <- here("data/16S/Roots/DeML_pooled/")
+
+fnFs_r <- sort(list.files(path_r, pattern = "R1.fastq.gz", full.names = TRUE))
+fnRs_r <- sort(list.files(path_r, pattern = "R2.fastq.gz", full.names = TRUE))
+
+sample.names_r <- sapply(strsplit(basename(fnFs_r), "_"), `[`, 1)
+
+plotQualityProfile(fnFs_r[1:4])
+plotQualityProfile(fnRs_r[1:4])
+```
+
+The quality scores look a bit better here so I use 220 as a trimming point in the next step.
+
+
+```{r cache=TRUE}
+filtFs_r <- file.path(path_r, "filtered_F", paste0(sample.names_r, "_F_filt.fastq.gz"))
+filtRs_r <- file.path(path_r, "filtered_R", paste0(sample.names_r, "_R_filt.fastq.gz"))
+names(filtFs_r) <- sample.names_r
+names(filtRs_r) <- sample.names_r
+
+out_r <- filterAndTrim(fnFs_r, filtFs_r, fnRs_r, filtRs_r, truncLen=c(220,220),
+                     maxN=0, maxEE=c(3,3), truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=TRUE)
+head(out_r, n = 10)
+
+```
+Same as before, the clustering and merging are run on the cluster.
+
+
+## ITS
+
+Crucial difference of ITS compared to 16S: the ITS region is highly variable in length (due to fast mutation rate), and thus shouldn't be truncated at one length like the 16S region.
+
+### Needles
+
+```{r ITS_Needles }
+path_n_i <- here("data/ITS/Needles/DeML_pooled/")
+
+fnFs_n_i <- sort(list.files(path_n_i, pattern = "R1.fastq.gz", full.names = TRUE))
+fnRs_n_i <- sort(list.files(path_n_i, pattern = "R2.fastq.gz", full.names = TRUE))
+```
+
+First we check for primers in the data (I think the primers were already removed in theses datasets, but we check just to make sure). First we record their DNA sequences.
+
+```{r}
+ITS1f <- "CTTGGTCATTTAGAGGAAGTAA"
+ITS2 <- "GCTGCGTTCTTCATCGATGC"
+```
+
+Next we create a vector with all possible orientations of the primers
+
+```{r}
+allOrients <- function (primer) {
+  require(Biostrings)
+  dna <- DNAString(primer)
+  orients <- c(Forward = dna, Complement = complement(dna), 
+               Reverse = reverse(dna), RevComp = reverseComplement(dna))
+  return(sapply(orients, toString))
+}
+ITS1f.orients <- allOrients(ITS1f)
+ITS2.orients <- allOrients(ITS2)
+```
+
+The presence of ambiguous bases (Ns) in the sequencing reads makes accurate mapping of short primer sequences difficult. Next we are going to “pre-filter” the sequences just to remove those with Ns, but perform no other filtering.
+
+```{r cache=TRUE}
+fnFs_n_i.filtN <- file.path(path_n_i, "filtN", basename(fnFs_n_i))
+fnRs_n_i.filtN <- file.path(path_n_i, "filtN", basename(fnRs_n_i))
+filterAndTrim(fnFs_n_i, fnFs_n_i.filtN, fnRs_n_i, fnRs_n_i.filtN, maxN = 0, multithread = TRUE)
+```
+
+Now we can count the number of times the primer sequences appear in the samples.
+
+```{r cache=TRUE}
+primerHits <- function (primer, fn) {
+  nhits <- vcountPattern(primer, sread(readFastq(fn)), fixed = FALSE)
+  return(sum(nhits > 0))
+}
+rbind(FWD.ForwardReads = sapply(ITS1f.orients, primerHits, fn = fnFs_n_i.filtN[[1]]),
+      FWD.ReverseReads = sapply(ITS1f.orients, primerHits, fn = fnRs_n_i.filtN[[1]]),
+      REV.ForwardReads = sapply(ITS2.orients, primerHits, fn = fnFs_n_i.filtN[[1]]),
+      REV.ReverseReads = sapply(ITS2.orients, primerHits, fn = fnRs_n_i.filtN[[1]]))
+```
+
+There are a few hits after all, so we proceed with the cutting step.
+
+```{r}
+cutadapt <- "/mnt/picea/home/aschneider/.conda/envs/amp_seq/bin/cutadapt"
+system2(cutadapt, args = "--version")
+```
+
+```{r cache=TRUE,include=FALSE}
+path.cut <- file.path(path_n_i, "cutadapt")
+if(!dir.exists(path.cut)) dir.create(path.cut)
+fnFs_n_i.cut <- file.path(path.cut, basename(fnFs_n_i))
+fnRs_n_i.cut <- file.path(path.cut, basename(fnRs_n_i))
+
+ITS1f.rc <- rc(ITS1f)
+ITS2.rc <- rc(ITS2)
+
+#Trim FWD and revcomp of REV off of R1
+R1.flags <- paste("-g", ITS1f, "-a", ITS2.rc)
+#Trim rev and rc of fw off of R2
+R2.flags <- paste("-G", ITS2, "-A", ITS1f.rc)
+#Run Cutadapt
+for (i in seq_along(fnFs_n_i)) {
+  system2(cutadapt, args = c(R1.flags, R2.flags, 
+                             "-n", 2,
+                             "--minimum-length", 50,
+                             "-o", fnFs_n_i.cut[i],
+                             "-p", fnRs_n_i.cut[i],
+                             fnFs_n_i.filtN[i],
+                             fnRs_n_i.filtN[i]))
+}
+
+rbind(FWD.ForwardReads = sapply(ITS1f.orients, primerHits, fn = fnFs_n_i.cut[[1]]),
+      FWD.ReverseReads = sapply(ITS1f.orients, primerHits, fn = fnRs_n_i.cut[[1]]),
+      REV.ForwardReads = sapply(ITS2.orients, primerHits, fn = fnFs_n_i.cut[[1]]),
+      REV.ReverseReads = sapply(ITS2.orients, primerHits, fn = fnRs_n_i.cut[[1]]))
+```
+The sanity check looks good, all primer sequences have been removed from the data.
+
+Now we can proceed as with the 16S data. We start with extracting the sample names and plotting Quality profiles for the first 4 samples.
+
+```{r cache=TRUE}
+sample.names_n_i <- sapply(strsplit(basename(fnFs_n_i.cut), "_"), `[`, 1)
+
+plotQualityProfile(fnFs_n_i.cut[1:4])
+plotQualityProfile(fnRs_n_i.cut[1:4])
+
+
+```
+
+Next is the filtering and trimming.
+
+```{r}
+filtFs_n_i <- file.path(path_n_i, "filtered_F", basename(fnFs_n_i.cut))
+filtRs_n_i <- file.path(path_n_i, "filtered_R", basename(fnRs_n_i.cut))
+```
+The dada2 recommends the following (standard) parameters for the filtering.
+```{r cache=TRUE}
+out_n_i <- filterAndTrim(fnFs_n_i.cut, filtFs_n_i, fnRs_n_i.cut, filtRs_n_i, maxN = 0, 
+                         maxEE = c(6,6), truncQ = 2, minLen = 50, rm.phix = TRUE, 
+                         compress = TRUE, multithread = TRUE)
+
+head(out_n_i, n = 10)
+```
+Since the overall read quality is quite bad we had to go up to 6 with the mEE parameter to retain a decent number of reads.
+
+The next steps (learning errors and the dada2 algorithm) are run from the command line again.
+
+### Roots
+
+```{r ITS_Roots }
+path_r_i <- here("data/ITS/Roots/DeML_pooled/")
+
+fnFs_r_i <- sort(list.files(path_r_i, pattern = "R1.fastq.gz", full.names = TRUE))
+fnRs_r_i <- sort(list.files(path_r_i, pattern = "R2.fastq.gz", full.names = TRUE))
+```
+
+First we check for primers in the data (I think the primers were already removed in theses datasets, but we check just to make sure).
+
+The presence of ambiguous bases (Ns) in the sequencing reads makes accurate mapping of short primer sequences difficult. Next we are going to “pre-filter” the sequences just to remove those with Ns, but perform no other filtering.
+
+```{r cache=TRUE}
+fnFs_r_i.filtN <- file.path(path_r_i, "filtN", basename(fnFs_r_i))
+fnRs_r_i.filtN <- file.path(path_r_i, "filtN", basename(fnRs_r_i))
+filterAndTrim(fnFs_r_i, fnFs_r_i.filtN, fnRs_r_i, fnRs_r_i.filtN, maxN = 0, multithread = TRUE)
+```
+
+Now we can count the number of times the primer sequences appear in the samples.
+
+```{r cache=TRUE}
+
+rbind(FWD.ForwardReads = sapply(ITS1f.orients, primerHits, fn = fnFs_r_i.filtN[[1]]),
+      FWD.ReverseReads = sapply(ITS1f.orients, primerHits, fn = fnRs_r_i.filtN[[1]]),
+      REV.ForwardReads = sapply(ITS2.orients, primerHits, fn = fnFs_r_i.filtN[[1]]),
+      REV.ReverseReads = sapply(ITS2.orients, primerHits, fn = fnRs_r_i.filtN[[1]]))
+```
+
+There are a few hits after all, so we proceed with the cutting step.
+
+```{r cache=TRUE,include=FALSE}
+path.cut_r <- file.path(path_r_i, "cutadapt")
+if(!dir.exists(path.cut_r)) dir.create(path.cut_r)
+fnFs_r_i.cut <- file.path(path.cut_r, basename(fnFs_r_i))
+fnRs_r_i.cut <- file.path(path.cut_r, basename(fnRs_r_i))
+
+#Run Cutadapt
+for (i in seq_along(fnFs_r_i)) {
+  system2(cutadapt, args = c(R1.flags, R2.flags, 
+                             "-n", 2,
+                             "--minimum-length", 50,
+                             "-o", fnFs_r_i.cut[i],
+                             "-p", fnRs_r_i.cut[i],
+                             fnFs_r_i.filtN[i],
+                             fnRs_r_i.filtN[i]))
+}
+
+rbind(FWD.ForwardReads = sapply(ITS1f.orients, primerHits, fn = fnFs_r_i.cut[[1]]),
+      FWD.ReverseReads = sapply(ITS1f.orients, primerHits, fn = fnRs_r_i.cut[[1]]),
+      REV.ForwardReads = sapply(ITS2.orients, primerHits, fn = fnFs_r_i.cut[[1]]),
+      REV.ReverseReads = sapply(ITS2.orients, primerHits, fn = fnRs_r_i.cut[[1]]))
+```
+The sanity check looks good, all primer sequences have been removed from the data.
+
+Now we can proceed as with the 16S data. We start with extracting the sample names and plotting Quality profiles for the first 4 samples.
+
+```{r cache=TRUE}
+sample.names_r_i <- sapply(strsplit(basename(fnFs_r_i.cut), "_"), `[`, 1)
+
+plotQualityProfile(fnFs_r_i.cut[1:4])
+plotQualityProfile(fnRs_r_i.cut[1:4])
+
+
+```
+
+Looks better than the needles. Next is the filtering and trimming.
+
+```{r}
+filtFs_r_i <- file.path(path_r_i, "filtered_F", basename(fnFs_r_i.cut))
+filtRs_r_i <- file.path(path_r_i, "filtered_R", basename(fnRs_r_i.cut))
+```
+The dada2 recommends the following (standard) parameters for the filtering. `maxEE` was changed to 6, otherwise we lose too much data.
+```{r cache=TRUE}
+out_r_i <- filterAndTrim(fnFs_r_i.cut, filtFs_r_i, fnRs_r_i.cut, filtRs_r_i, maxN = 0, 
+                         maxEE = c(6,6), truncQ = 2, minLen = 50, rm.phix = TRUE, 
+                         compress = TRUE, multithread = TRUE)
+
+head(out_r_i, n = 10)
+
+```
+
