@@ -40,21 +40,22 @@ names(dadas_r) <- sample.names
 for(sam in sample.names) {
   cat("Processing:", sam, "\n")
   derepF <- derepFastq(filtFs[[sam]])
-  ddF <- dada(derepF, err=errF, multithread=TRUE)
+  ddF <- dada(derepF, err=errF, multithread=TRUE, pool = TRUE)
   dadas_f[[sam]] <- ddF
   derepR <- derepFastq(filtRs[[sam]])
-  ddR <- dada(derepR, err=errR, multithread=TRUE)
+  ddR <- dada(derepR, err=errR, multithread=TRUE, pool = TRUE)
   dadas_r[[sam]] <- ddR
-  merger <- mergePairs(ddF, derepF, ddR, derepR)
+  merger <- mergePairs(ddF, derepF, ddR, derepR, maxMismatch = 1)
   mergers[[sam]] <- merger
 }
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab <- makeSequenceTable(mergers)
-dir.create(out, recursive = TRUE)
+#dir.create(out, recursive = TRUE)
 
 saveRDS(dadas_f, here(paste0(out, "/dada_f.rds")))
 saveRDS(dadas_r, here(paste0(out, "/dada_r.rds")))
+saveRDS(mergers, here(paste0(out, "/mergers.rds")))
 saveRDS(seqtab, here(paste0(out, "/seqtab.rds")))
 
 
