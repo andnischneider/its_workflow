@@ -1,0 +1,112 @@
+---
+title: "Comparison"
+author: "Andreas Schneider"
+date: "24/07/2019"
+output:
+  rmarkdown::html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    theme: "spacelab"
+    highlight: textmate
+    df_print: paged
+    code_folding: hide
+    self_contained: false
+    keep_md: false
+    encoding: "UTF-8"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dada2)
+suppressPackageStartupMessages(library(phyloseq))
+suppressPackageStartupMessages(library(Biostrings))
+```
+
+
+# Comparison dada2 - vsearch
+
+This document aims to show that dada2 ASV clustering (a more exact method than the traditional OTU clustering) provides the same results and conclusions as vsearch and OTU clustering used in Haas et al. 2018.
+
+The soil samples are not included, since we don't have matching RNA-Seq data.
+
+## Fig.1 
+
+We start by reading in the preprocessed data. 
+
+We start with 16S, needles and then roots
+
+
+
+Now we are ready to import the ITS data. We import both needles and root data, and after cleaning up the sequences (we select what has been cut out by ITSx, this should allow for more accurate merging of ASVs), we merge them and run the taxonomy assignment on the merged matrix.
+
+```{r}
+seq.tab_n_i.nochim <- readRDS("data/ITS/Needles/dada2/seqtab_nochim.rds")
+seq.tab_n_i.nochim2 <- seq.tab_n_i.nochim[,!(colnames(seq.tab_n_i.nochim) %in% readDNAStringSet("data/ITS/Needles/ITSx/refseq-ITSx.fa_no_detections.fasta"))]
+
+colnames(seq.tab_n_i.nochim2)[which(paste0("ASV", match(colnames(seq.tab_n_i.nochim2), colnames(seq.tab_n_i.nochim))) %in% gsub("(ASV\\d+)\\|.*", "\\1", names(readDNAStringSet("data/ITS/Needles/ITSx/refseq-ITSx.fa.ITS1.fasta"))))] <- readDNAStringSet("data/ITS/Needles/ITSx/refseq-ITSx.fa.ITS1.fasta")
+mock_n_i <- seq.tab_n_i.nochim2["its.mock.none.t5.0",]
+seq.tab_n_i.nochim2 <- seq.tab_n_i.nochim2[-1,]
+```
+
+```{r}
+seq.tab_r_i.nochim <- readRDS("data/ITS/Roots/dada2/seqtab_nochim.rds")
+seq.tab_r_i.nochim2 <- seq.tab_r_i.nochim[,!(colnames(seq.tab_r_i.nochim) %in% readDNAStringSet("data/ITS/Roots/ITSx/refseq-ITSx.fa_no_detections.fasta"))]
+
+colnames(seq.tab_r_i.nochim2)[which(paste0("ASV", match(colnames(seq.tab_r_i.nochim2), colnames(seq.tab_r_i.nochim))) %in% gsub("(ASV\\d+)\\|.*", "\\1", names(readDNAStringSet("data/ITS/Roots/ITSx/refseq-ITSx.fa.ITS1.fasta"))))] <- readDNAStringSet("data/ITS/Roots/ITSx/refseq-ITSx.fa.ITS1.fasta")
+mock_r_i <- seq.tab_r_i.nochim2["its.mock.none.t5.0",]
+seq.tab_r_i.nochim2 <- seq.tab_r_i.nochim2[-1,]
+```
+
+Now we can merge the roots and needles datasets before the taxonomy assignment.
+
+```{r}
+seq.tab_its_all <- mergeSequenceTables(seq.tab_n_i.nochim2, seq.tab_r_i.nochim2)
+###Now some of the sequences will be shorter than 50nts, so we remove those (necessary for tax assignment)
+seq.tab_its_all <- seq.tab_its_all[,which(nchar(colnames(seq.tab_its_all))>50)]
+##ALso at this point we filter out ASVs with less than 10 from every sample and require a minimum abundance of 0.005% in "any of the three sample types".
+seq.tab_its_all[seq.tab_its_all<10] <- 0
+source("src/R/featureSelection.R")
+ccc <- factor(paste(sapply(strsplit(rownames(seq.tab_its_all), "[.]"), "[", c(2)), sapply(strsplit(rownames(seq.tab_its_all), "[.]"), "[", c(3)), sep = "_"))
+names(ccc) <- rownames(seq.tab_its_all)
+ccc <- ccc[rownames(seq.tab_its_all)]
+seq.tab_its_all2 <- seq.tab_its_all[,featureSelectProp(as.matrix(t(seq.tab_its_all)), ccc, 0.00005)]
+
+saveRDS(seq.tab_its_all, file = "data/ITS/Both/dada2/seq.tab_all.rds")
+
+```
+
+We run the taxonomy assignment through slurm. At this point the data is ready to be imported into phyloseq.
+
+```{r}
+ps_its_all <- phyloseq(otu_table(readRDS("data/ITS/Both/dada2/seq.tab_all.rds"), taxa_are_rows = FALSE),
+                       sample_data(read.csv("doc/ITS_all.csv", row.names = 1)),
+                       tax_table(readRDS("data/ITS/Both/dada2/taxa.rds")))
+
+```
+
+Now we change the ASV names to ASV1, ASV2, etc and save the sequences in a separate slot. This will also be useful to filter them with ITSx.
+
+```{r}
+dna_its_all <- DNAStringSet(taxa_names(ps_its_all))
+names(dna_its_all) <- taxa_names(ps_its_all)
+ps_its_all <- merge_phyloseq(ps_its_all, dna_its_all)
+taxa_names(ps_its_all) <- paste0("ASV", seq(ntaxa(ps_its_all)))
+names(dna_its_all) <- paste0("ASV", seq(ntaxa(ps_its_all)))
+```
+
+**For this study any OTU having ten or fewer sequences was removed from a sample. In addition, a minimum abundance of 0.005% in any of the three sample types was required.**
+
+### Filtering of the data
+
+```{r}
+ps_its_all2 <- prune_taxa()
+```
+
+
+
+
