@@ -71,6 +71,36 @@ head(out_n, n = 10)
 
 The Error estimation and ASV clustering takes a long time and is run via slurm. Run the script rundada2.sh either in a terminal, ideally submitted to SLURM.
 
+#### Chimera removal
+
+```{r}
+seq.tab_n <- readRDS("data/16S/Needles/dada2/seqtab.rds")
+seq.tab_n.nochim <- removeBimeraDenovo(seq.tab_n, method = "consensus",
+                                       multithread= TRUE, verbose = TRUE)
+saveRDS(seq.tab_n.nochim, "data/16S/Needles/dada2/seqtab_nochim.rds")
+
+#Import dada_files
+dadaFs_n <- readRDS("data/16S/Needles/dada2/dada_f.rds")
+dadaRs_n <- readRDS("data/16S/Needles/dada2/dada_r.rds")
+#mergers_n <- mergePairs(dadaFs_n, filtFs_n, dadaRs_n, filtRs_n, verbose = TRUE, maxMismatch = 1)
+
+#track the reads through pipeline
+getN <- function (x) sum(getUniques(x))
+track <- cbind(out_n, sapply(dadaFs_n, getN), sapply(dadaRs_n, getN), rowSums(seq.tab_n), rowSums(seq.tab_n.nochim))
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names_n
+head(track, n = 15)
+```
+
+#### Taxonomy
+
+```{r}
+taxa_n <- assignTaxonomy(seq.tab_n.nochim, "data/Tax_db/silva_nr_v132_train_set.fa.gz", multithread = TRUE, tryRC = TRUE)
+
+saveRDS(taxa_n, "data/16S/Needles/dada2/taxa.rds")
+```
+
+
 ### Roots
 
 ```{r cache=TRUE}
@@ -102,6 +132,33 @@ head(out_r, n = 10)
 ```
 Same as before, the clustering and merging are run on the cluster.
 
+#### Chimera removal
+
+```{r}
+seq.tab_r <- readRDS("data/16S/Roots/dada2/seqtab.rds")
+seq.tab_r.nochim <- removeBimeraDenovo(seq.tab_r, method = "consensus",
+                                       multithread= TRUE, verbose = TRUE)
+saveRDS(seq.tab_r.nochim, "data/16S/Roots/dada2/seqtab_nochim.rds")
+
+#Import dada_files
+dadaFs_r <- readRDS("data/16S/Roots/dada2/dada_f.rds")
+dadaRs_r <- readRDS("data/16S/Roots/dada2/dada_r.rds")
+#mergers_r <- mergePairs(dadaFs_r, filtFs_r, dadaRs_r, filtRs_r, verbose = TRUE, maxMismatch = 1)
+
+#track the reads through pipeline
+track_r <- cbind(out_r, sapply(dadaFs_r, getN), sapply(dadaRs_r, getN), rowSums(seq.tab_r), rowSums(seq.tab_r.nochim))
+colnames(track_r) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track_r) <- sample.names_r
+head(track_r, n = 15)
+```
+
+#### Taxonomy
+
+```{r}
+taxa_r <- assignTaxonomy(seq.tab_r.nochim, "data/Tax_db/silva_nr_v132_train_set.fa.gz", multithread = TRUE, tryRC = TRUE)
+
+saveRDS(taxa_r, "data/16S/Roots/dada2/taxa.rds")
+```
 
 ## ITS
 
@@ -225,6 +282,43 @@ Since the overall read quality is quite bad we had to go up to 6 with the mEE pa
 
 The next steps (learning errors and the dada2 algorithm) are run from the command line again.
 
+#### Chimera removal
+
+```{r}
+seq.tab_n_i <- readRDS("data/ITS/Needles/dada2/seqtab.rds")
+seq.tab_n_i.nochim <- removeBimeraDenovo(seq.tab_n_i, method = "consensus",
+                                       multithread= TRUE, verbose = TRUE)
+saveRDS(seq.tab_n_i.nochim, "data/ITS/Needles/dada2/seqtab_nochim.rds")
+
+#Import dada_files
+dadaFs_n_i <- readRDS("data/ITS/Needles/dada2/dada_f.rds")
+dadaRs_n_i <- readRDS("data/ITS/Needles/dada2/dada_r.rds")
+#mergers_n_i <- mergePairs(dadaFs_n_i, filtFs_n_i, dadaRs_n_i, filtRs_n_i, verbose = TRUE, maxMismatch = 1)
+
+#track the reads through pipeline
+track_n_i <- cbind(out_n_i, sapply(dadaFs_n_i, getN), sapply(dadaRs_n_i, getN), rowSums(seq.tab_n_i), rowSums(seq.tab_n_i.nochim))
+colnames(track_n_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track_n_i) <- sample.names_n_i
+head(track_n_i, n = 15)
+```
+
+#### Writing of sequence fasta for ITSx
+
+```{r}
+dna_n_i <- DNAStringSet(colnames(seq.tab_n_i.nochim))
+names(dna_n_i) <- paste0("ASV", seq(ncol(seq.tab_n_i.nochim)))
+writeXStringSet(dna_n_i, file = "data/ITS/Roots/phyloseq/refseq.fa")
+```
+
+#### Taxonomy
+
+```{r}
+taxa_n_i <- assignTaxonomy(seq.tab_n_i.nochim, "data/Tax_db/sh_general_release_dynamic_s_02.02.2019.fasta", multithread = TRUE, tryRC = TRUE)
+
+saveRDS(taxa_n_i, "data/ITS/Needles/dada2/taxa.rds")
+```
+
+
 ### Roots
 
 ```{r ITS_Roots }
@@ -307,3 +401,41 @@ head(out_r_i, n = 10)
 
 ```
 
+Denoising and merging ran on SLURM.
+
+#### Chimera removal
+
+```{r}
+seq.tab_r_i <- readRDS("data/ITS/Roots/dada2/seqtab.rds")
+seq.tab_r_i.nochim <- removeBimeraDenovo(seq.tab_r_i, method = "consensus",
+                                       multithread= TRUE, verbose = TRUE)
+saveRDS(seq.tab_r_i.nochim, "data/ITS/Roots/dada2/seqtab_nochim.rds")
+
+#Import dada_files
+dadaFs_r_i <- readRDS("data/ITS/Roots/dada2/dada_f.rds")
+dadaRs_r_i <- readRDS("data/ITS/Roots/dada2/dada_r.rds")
+#mergers_r_i <- mergePairs(dadaFs_r_i, filtFs_r_i, dadaRs_r_i, filtRs_r_i, verbose = TRUE, maxMismatch = 1)
+
+#track the reads through pipeline
+track_r_i <- cbind(out_r_i, sapply(dadaFs_r_i, getN), sapply(dadaRs_r_i, getN), rowSums(seq.tab_r_i), rowSums(seq.tab_r_i.nochim))
+colnames(track_r_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track_r_i) <- sample.names_r_i
+head(track_r_i, n = 15)
+```
+
+#### Writing of sequence fasta for ITSx
+
+```{r}
+dna_r_i <- DNAStringSet(colnames(seq.tab_r_i.nochim))
+names(dna_r_i) <- paste0("ASV", seq(ncol(seq.tab_r_i.nochim)))
+writeXStringSet(dna_r_i, file = "data/ITS/Roots/phyloseq/refseq.fa")
+```
+
+
+#### Taxonomy
+
+```{r}
+taxa_r_i <- assignTaxonomy(seq.tab_r_i.nochim, "data/Tax_db/sh_general_release_dynamic_s_02.02.2019.fasta", multithread = TRUE, tryRC = TRUE)
+
+saveRDS(taxa_r_i, "data/ITS/Roots/dada2/taxa.rds")
+```
