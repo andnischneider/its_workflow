@@ -1,0 +1,5 @@
+name: techpaper
+channels:
+  - bioconda
+dependencies:
+  - bioconductor-dada2=1.12.1
