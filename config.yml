@@ -1,1 +1,3 @@
-input_16S: some/path
+sample_file: "samples.csv"
+data_dir: "data"
+results_dir: "results"
