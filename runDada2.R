@@ -2,7 +2,7 @@
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) != 3) {
+if (length(args) != 4) {
   stop('usage: runDada2.R <Forward filtered> <Reverse filtered> <Output dir> <threads>')
 }
 
