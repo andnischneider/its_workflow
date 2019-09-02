@@ -6,6 +6,7 @@ import pandas as pd
 def get_samples(f, pool=False):
     samples = {}
     df = pd.read_csv(f, sep="\t", header=0)
+    genes = list(df.geneType.unique())
     for i in df.index:
         r = df.loc[i]
         if pool:
@@ -22,4 +23,4 @@ def get_samples(f, pool=False):
             samples[sampleName][runID] = {r.geneType: acc}
         except KeyError:
             samples[sampleName] = {runID: {r.geneType: acc}}
-    return samples
+    return samples, genes
