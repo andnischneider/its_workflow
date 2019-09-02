@@ -1,3 +1,16 @@
-sample_file: "samples.csv"
+# Paths
+sample_file: "samples.tsv"
 data_dir: "data"
 results_dir: "results"
+
+# Performance
+threads: 8
+
+# Parameters
+ITS:
+  FWD: "CTTGGTCATTTAGAGGAAGTAA"
+  REV: "GCTGCGTTCTTCATCGATGC"
+
+# Preprocessing
+demultiplex: True
+pool: True

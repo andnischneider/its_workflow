@@ -8,12 +8,18 @@ def get_samples(f, pool=False):
     df = pd.read_csv(f, sep="\t", header=0)
     for i in df.index:
         r = df.loc[i]
+        if pool:
+            runID = r.sampleRun
+            sampleName = r.sampleName
+        else:
+            runID = 1
+            sampleName = "{}.{}".format(r.sampleName,r.sampleRun)
         try:
             acc = r.accession
         except KeyError:
-            acc = r.sampleName
+            acc = sampleName
         try:
-            samples[r.sampleName][r.sampleRun] = {r.geneType: acc}
+            samples[sampleName][runID] = {r.geneType: acc}
         except KeyError:
-            samples[r.sampleName] = {r.sampleRun: {r.geneType: acc}}
+            samples[sampleName] = {runID: {r.geneType: acc}}
     return samples
