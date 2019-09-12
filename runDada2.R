@@ -1,14 +1,15 @@
-#!/mnt/aspnas/sw/bin/Rscript
+#!/usr/bin/env Rscript
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) != 3) {
-  stop('usage: runDada2.R <Forward filtered> <Reverse filtered> <Output dir>')
+if (length(args) != 4) {
+  stop('usage: runDada2.R <Forward filtered> <Reverse filtered> <Output dir> <threads>')
 }
 
 fw <- args[1]
 rv <- args[2]
 out <- args[3]
+threads <- args[4]
 
 library(dada2); packageVersion("dada2")
 library(here)
@@ -24,9 +25,9 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 set.seed(100)
 # Learn forward error rates
-errF <- learnErrors(filtFs, multithread=TRUE) #nbases=1e8, 
+errF <- learnErrors(filtFs, multithread=threads) #nbases=1e8,
 # Learn reverse error rates
-errR <- learnErrors(filtRs, multithread=TRUE) #nbases=1e8, 
+errR <- learnErrors(filtRs, multithread=threads) #nbases=1e8,
 # Sample inference and merger of paired-end reads
 mergers <- vector("list", length(sample.names))
 names(mergers) <- sample.names
@@ -40,10 +41,10 @@ names(dadas_r) <- sample.names
 for(sam in sample.names) {
   cat("Processing:", sam, "\n")
   derepF <- derepFastq(filtFs[[sam]])
-  ddF <- dada(derepF, err=errF, multithread=TRUE, pool = TRUE)
+  ddF <- dada(derepF, err=errF, multithread=threads, pool = TRUE)
   dadas_f[[sam]] <- ddF
   derepR <- derepFastq(filtRs[[sam]])
-  ddR <- dada(derepR, err=errR, multithread=TRUE, pool = TRUE)
+  ddR <- dada(derepR, err=errR, multithread=threads, pool = TRUE)
   dadas_r[[sam]] <- ddR
   merger <- mergePairs(ddF, derepF, ddR, derepR, maxMismatch = 1)
   mergers[[sam]] <- merger

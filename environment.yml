@@ -1,0 +1,13 @@
+name: techpaper
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - bioconductor-dada2=1.12.1
+  - snakemake-minimal
+  - r-here
+  - bioconductor-biostrings
+  - cutadapt
+  - biopython
+  - pandas
+  - sra-tools

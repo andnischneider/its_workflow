@@ -1,1 +1,31 @@
-input_16S: some/path
+# Paths
+sample_file: "samples.tsv"
+data_dir: "data"
+results_dir: "results"
+
+# Performance
+threads: 8
+
+# Parameters
+ITS:
+  FWD: "CTTGGTCATTTAGAGGAAGTAA"
+  REV: "GCTGCGTTCTTCATCGATGC"
+  filter_trim_params:
+    maxN: 0
+    maxEE: "c(6,6)"
+    truncLen: 0
+    truncQ: 2
+    minLen: 50
+    rm_phix: True
+16S:
+  filter_trim_params:
+    maxN: 0
+    maxEE: "c(3,3)"
+    truncLen: "c(190,190)"
+    truncQ: 2
+    minLen: 20
+    rm_phix: True
+
+# Preprocessing
+demultiplex: True
+pool: False
