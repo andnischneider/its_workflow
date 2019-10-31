@@ -13,6 +13,13 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r import}
+suppressMessages(library(here)) 
+suppressMessages(library(dada2))
+suppressMessages(library(ShortRead))
+suppressMessages(library(Biostrings))
+```
+
 # Import of Data
 
 Here the data is imported into R, and a quality check performed on some of the samples.

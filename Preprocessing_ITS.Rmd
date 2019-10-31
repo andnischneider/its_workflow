@@ -19,6 +19,8 @@ suppressMessages(library(here))
 suppressMessages(library(dada2))
 suppressMessages(library(ShortRead))
 suppressMessages(library(Biostrings))
+suppressMessages(library(dplyr))
+suppressMessages(library(reshape2))
 ```
 
 # Introduction
@@ -156,6 +158,9 @@ dadaFs_n_i <- readRDS("data/ITS/Needles/dada2/dada_f.rds")
 dadaRs_n_i <- readRDS("data/ITS/Needles/dada2/dada_r.rds")
 #mergers_n_i <- mergePairs(dadaFs_n_i, filtFs_n_i, dadaRs_n_i, filtRs_n_i, verbose = TRUE, maxMismatch = 1)
 
+```
+
+```{r}
 #track the reads through pipeline
 track_n_i <- cbind(out_n_i, sapply(dadaFs_n_i, getN), sapply(dadaRs_n_i, getN), rowSums(seq.tab_n_i), rowSums(seq.tab_n_i.nochim))
 colnames(track_n_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
@@ -168,8 +173,35 @@ head(track_n_i, n = 15)
 ```{r}
 dna_n_i <- DNAStringSet(colnames(seq.tab_n_i.nochim))
 names(dna_n_i) <- paste0("ASV", seq(ncol(seq.tab_n_i.nochim)))
-writeXStringSet(dna_n_i, file = "data/ITS/Roots/phyloseq/refseq.fa")
+writeXStringSet(dna_n_i, file = "data/ITS/Needles/phyloseq/refseq.fa")
 ```
+
+#### Import ITSx sequences and collate (if possible/necessary)
+
+```{r}
+dna_n_i_clean <- as.character(readDNAStringSet(here("data/ITS/Needles/ITSx/2012needles.ITS1.full_and_partial.fasta")))
+seq.tab_n_i.nochim2 <- seq.tab_n_i.nochim
+colnames(seq.tab_n_i.nochim2) <- names(dna_n_i)
+seq.tab_n_i.nochim2 <- seq.tab_n_i.nochim2[,colnames(seq.tab_n_i.nochim2)%in%names(dna_n_i_clean)]
+
+colnames(seq.tab_n_i.nochim2) <- dna_n_i_clean
+seq.tab_n_i.nochim2 <- t(seq.tab_n_i.nochim2)
+table(nchar(getSequences(t(seq.tab_n_i.nochim2))))
+
+#There is one sequence below 50bp, it needs to be purged, either now or later. Now is better
+dna_n_i_clean <- dna_n_i_clean[!(nchar(dna_n_i_clean)<50)]
+seq.tab_n_i.nochim2 <- seq.tab_n_i.nochim2[nchar(rownames(seq.tab_n_i.nochim2))>50,]
+
+#At this point we can summarise all identical sequences 
+seq.tab_n_i.nc3 <- cbind.data.frame(sequence=rownames(seq.tab_n_i.nochim2), seq.tab_n_i.nochim2)
+seqtab_n_i.nc4 <- group_by(seq.tab_n_i.nc3, sequence) %>% 
+  summarise_each(funs(sum)) 
+seqtab_n_i.nc5 <- seqtab_n_i.nc4[,-c(1,2)]
+rownames(seqtab_n_i.nc5) <- seqtab_n_i.nc4$sequence
+seqtab_n_i.nc5 <- data.matrix(t(seqtab_n_i.nc5))
+saveRDS(seqtab_n_i.nc5, here("data/ITS/Needles/ITSx/seqtab_clean.rds"))
+```
+
 
 
 ### Roots
@@ -269,6 +301,9 @@ dadaFs_r_i <- readRDS("data/ITS/Roots/dada2/dada_f.rds")
 dadaRs_r_i <- readRDS("data/ITS/Roots/dada2/dada_r.rds")
 #mergers_r_i <- mergePairs(dadaFs_r_i, filtFs_r_i, dadaRs_r_i, filtRs_r_i, verbose = TRUE, maxMismatch = 1)
 
+```
+
+```{r}
 #track the reads through pipeline
 track_r_i <- cbind(out_r_i, sapply(dadaFs_r_i, getN), sapply(dadaRs_r_i, getN), rowSums(seq.tab_r_i), rowSums(seq.tab_r_i.nochim))
 colnames(track_r_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
@@ -283,3 +318,97 @@ dna_r_i <- DNAStringSet(colnames(seq.tab_r_i.nochim))
 names(dna_r_i) <- paste0("ASV", seq(ncol(seq.tab_r_i.nochim)))
 writeXStringSet(dna_r_i, file = "data/ITS/Roots/phyloseq/refseq.fa")
 ```
+
+#### Import ITSx sequences and collate (if possible/necessary)
+
+```{r}
+dna_r_i_clean <- as.character(readDNAStringSet(here("data/ITS/Roots/ITSx/2012roots.ITS1.full_and_partial.fasta")))
+#This isn't right
+seq.tab_r_i.nochim2 <- seq.tab_r_i.nochim
+colnames(seq.tab_r_i.nochim2) <- names(dna_r_i)
+seq.tab_r_i.nochim2 <- seq.tab_r_i.nochim2[,colnames(seq.tab_r_i.nochim2)%in%names(dna_r_i_clean)]
+
+colnames(seq.tab_r_i.nochim2) <- dna_r_i_clean
+seq.tab_r_i.nochim2 <- t(seq.tab_r_i.nochim2)
+table(nchar(getSequences(t(seq.tab_r_i.nochim2))))
+
+#There are a few sequences below 50bp, they needs to be purged, either now or later. Now is better
+dna_r_i_clean <- dna_r_i_clean[!(nchar(dna_r_i_clean)<50)]
+seq.tab_r_i.nochim2 <- seq.tab_r_i.nochim2[nchar(rownames(seq.tab_r_i.nochim2))>50,]
+
+#At this point we can summarise all identical sequences 
+seq.tab_r_i.nc3 <- cbind.data.frame(sequence=rownames(seq.tab_r_i.nochim2), seq.tab_r_i.nochim2)
+seqtab_r_i.nc4 <- group_by(seq.tab_r_i.nc3, sequence) %>% 
+  summarise_each(funs(sum)) 
+seqtab_r_i.nc5 <- seqtab_r_i.nc4[,-c(1,2)]
+rownames(seqtab_r_i.nc5) <- seqtab_r_i.nc4$sequence
+seqtab_r_i.nc5 <- data.matrix(t(seqtab_r_i.nc5))
+saveRDS(seqtab_r_i.nc5, here("data/ITS/Roots/ITSx/seqtab_clean.rds"))
+```
+
+
+### Merging Needles and Roots
+
+Now that both datasets have been filtered with ITSx, we can merge them before we cluster the data with swarm.
+
+```{r merge_n_r}
+#seqtab_BOTH <- mergeSequenceTables(seqtab_n_i.nc5, seqtab_r_i.nc5)
+seqtab_BOTH <- mergeSequenceTables(readRDS(here("data/ITS/Needles/ITSx/seqtab_clean.rds")), readRDS(here("data/ITS/Roots/ITSx/seqtab_clean.rds")))
+```
+
+#### Export cut and summed ASVs for Swarm
+
+Swarm needs abundance info included, I will use the sum of counts in all samples. Since I have evaluated the Mock elsewhere, it has been removed at this point to prevent that it interfers with the clustering.
+
+```{r}
+seqtab_BOTH <- seqtab_BOTH[,colSums(seqtab_BOTH)>0]
+dna_i_clean_sum2 <- DNAStringSet(colnames(seqtab_BOTH))
+names(dna_i_clean_sum2) <- paste0("ASV", 1:length(dna_i_clean_sum2))
+names(dna_i_clean_sum2) <- paste0(names(dna_i_clean_sum2), ";size=", colSums(seqtab_BOTH))
+writeXStringSet(dna_i_clean_sum2, file = here("data/ITS/Both/swarm/ASVs_cut_sum_abun.fa"))
+```
+
+Now we can run swarm on these cut ASVs with the summed abundances, and re-import the clusters it creates.
+
+I will import the Swarm clusters as a factor that will enable a summarisation.
+
+```{r}
+clustfact <- function(file) {
+  clus <- readr::read_tsv(file, col_names = FALSE)
+  clus <- stringr::str_split_fixed(clus$X1, pattern = " ", n = max(stringr::str_count(clus$X1, "ASV")))
+  rownames(clus) <- paste0("cluster", 1:nrow(clus))
+  clus <- melt(as.matrix(clus))[,-2]
+  clus <- clus[grepl("ASV", clus$value),]
+  clus$value <- gsub(";size=\\d+", "", clus$value)
+  #clus2 <- as.factor(clus$Var1)
+  #names(clus2) <- clus$value
+  colnames(clus) <- c("Cluster", "ASV")
+  #clus$Cluster <- as.character(clus$Cluster)
+  return(clus)
+}
+clus_swarm <- clustfact(here("data/ITS/Both/swarm/results.txt"))
+
+```
+
+Now we can add this factor as a column to our matrix, and summarise the counts by cluster.
+
+```{r}
+seqtab_BOTH_sw <- as.data.frame(cbind(Cluster=clus_swarm$Cluster[match(gsub(";size=\\d+", "", names(dna_i_clean_sum2)), clus_swarm$ASV)], t(seqtab_BOTH)))
+
+seqtab_BOTH_sw <- group_by(seqtab_BOTH_sw, Cluster) %>% 
+  summarise_each(funs(sum)) 
+seqtab_BOTH_sw$Cluster <- paste0("Cluster", seqtab_BOTH_sw$Cluster)
+seqtab_BOTH_sw2 <- seqtab_BOTH_sw
+rownames(seqtab_BOTH_sw2) <- seqtab_BOTH_sw$Cluster
+seqtab_BOTH_sw2 <- data.matrix(seqtab_BOTH_sw2[,-1])
+```
+
+The counts are now summarised by cluster. Next we can assign taxonomy to these SOTUs (Swarm Operational Taxonomic Units) and then start with the actual analyses.
+
+```{r}
+dna_i_clean_swarm <- readDNAStringSet(here("data/ITS/Both/swarm/seeds.fasta"))
+names(dna_i_clean_swarm) <- seqtab_BOTH_sw$Cluster 
+saveRDS(dna_i_clean_swarm, here("data/ITS/Both/swarm/seqs.rds"))
+```
+
+
