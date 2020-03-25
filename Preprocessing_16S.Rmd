@@ -1,0 +1,148 @@
+---
+title: "Preprocessing 16S"
+author: "Andreas Schneider"
+date: "29/10/2019"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import}
+suppressMessages(library(here)) 
+suppressMessages(library(dada2))
+suppressMessages(library(ShortRead))
+suppressMessages(library(Biostrings))
+```
+
+# Import of Data
+
+Here the data is imported into R, and a quality check performed on some of the samples.
+
+## 16S
+
+### Needles
+```{r cache=TRUE}
+path_n <- here("data/16S/Needles/DeML_pooled/")
+
+fnFs_n <- sort(list.files(path_n, pattern = "R1.fastq.gz", full.names = TRUE))
+fnRs_n <- sort(list.files(path_n, pattern = "R2.fastq.gz", full.names = TRUE))
+
+sample.names_n <- sapply(strsplit(basename(fnFs_n), "_"), `[`, 1)
+
+plotQualityProfile(fnFs_n[1:4])
+plotQualityProfile(fnRs_n[1:4])
+```
+
+The quality scores drop below 30 on average around 150, and we need more than 150bp per read for them to overlap properly. Thus we choose an (arbitrary) cutoff at 190 for both.
+
+In the next step we create a folder and filenames for the filtered files, and perform the actual filtering. Since this step is relatively fast we can run it inside the Rmarkdown document.
+
+```{r cache=TRUE}
+filtFs_n <- file.path(path_n, "filtered_F", paste0(sample.names_n, "_F_filt.fastq.gz"))
+filtRs_n <- file.path(path_n, "filtered_R", paste0(sample.names_n, "_R_filt.fastq.gz"))
+names(filtFs_n) <- sample.names_n
+names(filtRs_n) <- sample.names_n
+
+out_n <- filterAndTrim(fnFs_n, filtFs_n, fnRs_n, filtRs_n, truncLen=c(190,190),
+                     maxN=0, maxEE=c(3,3), truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=TRUE)
+head(out_n, n = 10)
+
+```
+
+The Error estimation and ASV clustering takes a long time and is run via slurm. Run the script rundada2.sh either in a terminal, ideally submitted to SLURM.
+
+#### Chimera removal
+
+```{r}
+seq.tab_n <- readRDS("data/16S/Needles/dada2/seqtab.rds")
+seq.tab_n.nochim <- removeBimeraDenovo(seq.tab_n, method = "consensus",
+                                       multithread= TRUE, verbose = TRUE)
+saveRDS(seq.tab_n.nochim, "data/16S/Needles/dada2/seqtab_nochim.rds")
+
+#Import dada_files
+dadaFs_n <- readRDS("data/16S/Needles/dada2/dada_f.rds")
+dadaRs_n <- readRDS("data/16S/Needles/dada2/dada_r.rds")
+#mergers_n <- mergePairs(dadaFs_n, filtFs_n, dadaRs_n, filtRs_n, verbose = TRUE, maxMismatch = 1)
+
+#track the reads through pipeline
+getN <- function (x) sum(getUniques(x))
+track <- cbind(out_n, sapply(dadaFs_n, getN), sapply(dadaRs_n, getN), rowSums(seq.tab_n), rowSums(seq.tab_n.nochim))
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names_n
+head(track, n = 15)
+```
+
+#### Taxonomy
+
+```{r}
+taxa_n <- assignTaxonomy(seq.tab_n.nochim, "data/Tax_db/silva_nr_v132_train_set.fa.gz", multithread = TRUE, tryRC = TRUE)
+
+saveRDS(taxa_n, "data/16S/Needles/dada2/taxa.rds")
+```
+
+
+### Roots
+
+```{r cache=TRUE}
+path_r <- here("data/16S/Roots/DeML_pooled/")
+
+fnFs_r <- sort(list.files(path_r, pattern = "R1.fastq.gz", full.names = TRUE))
+fnRs_r <- sort(list.files(path_r, pattern = "R2.fastq.gz", full.names = TRUE))
+
+sample.names_r <- sapply(strsplit(basename(fnFs_r), "_"), `[`, 1)
+
+plotQualityProfile(fnFs_r[1:4])
+plotQualityProfile(fnRs_r[1:4])
+```
+
+The quality scores look a bit better here so I use 220 as a trimming point in the next step.
+
+
+```{r cache=TRUE}
+filtFs_r <- file.path(path_r, "filtered_F", paste0(sample.names_r, "_F_filt.fastq.gz"))
+filtRs_r <- file.path(path_r, "filtered_R", paste0(sample.names_r, "_R_filt.fastq.gz"))
+names(filtFs_r) <- sample.names_r
+names(filtRs_r) <- sample.names_r
+
+out_r <- filterAndTrim(fnFs_r, filtFs_r, fnRs_r, filtRs_r, truncLen=c(220,220),
+                     maxN=0, maxEE=c(3,3), truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=TRUE)
+head(out_r, n = 10)
+
+```
+Same as before, the clustering and merging are run on the cluster.
+
+#### Chimera removal
+
+```{r}
+seq.tab_r <- readRDS("data/16S/Roots/dada2/seqtab.rds")
+seq.tab_r.nochim <- removeBimeraDenovo(seq.tab_r, method = "consensus",
+                                       multithread= TRUE, verbose = TRUE)
+saveRDS(seq.tab_r.nochim, "data/16S/Roots/dada2/seqtab_nochim.rds")
+
+#Import dada_files
+dadaFs_r <- readRDS("data/16S/Roots/dada2/dada_f.rds")
+dadaRs_r <- readRDS("data/16S/Roots/dada2/dada_r.rds")
+#mergers_r <- mergePairs(dadaFs_r, filtFs_r, dadaRs_r, filtRs_r, verbose = TRUE, maxMismatch = 1)
+
+#track the reads through pipeline
+track_r <- cbind(out_r, sapply(dadaFs_r, getN), sapply(dadaRs_r, getN), rowSums(seq.tab_r), rowSums(seq.tab_r.nochim))
+colnames(track_r) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track_r) <- sample.names_r
+head(track_r, n = 15)
+```
+
+#### Taxonomy
+
+```{r}
+taxa_r <- assignTaxonomy(seq.tab_r.nochim, "data/Tax_db/silva_nr_v132_train_set.fa.gz", multithread = TRUE, tryRC = TRUE)
+
+saveRDS(taxa_r, "data/16S/Roots/dada2/taxa.rds")
+```

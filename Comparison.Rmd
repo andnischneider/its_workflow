@@ -132,16 +132,21 @@ names(ccc) <- rownames(seq.tab_its_all)
 ccc <- ccc[rownames(seq.tab_its_all)]
 seq.tab_its_all2 <- seq.tab_its_all[,featureSelectProp(as.matrix(t(seq.tab_its_all)), ccc, 0.00005)]
 
-saveRDS(seq.tab_its_all, file = "data/ITS/Both/dada2/seq.tab_all.rds")
-
+saveRDS(seq.tab_its_all2, file = "data/ITS/Both/dada2/seq.tab_all.rds")
+dim(seq.tab_its_all2)
 ```
 
 We run the taxonomy assignment through slurm. At this point the data is ready to be imported into phyloseq.
 
 ```{r psimportITS}
+#Clean the tax table first
+taxa_its_all <- readRDS("data/ITS/Both/dada2/taxa.rds")
+taxa_its_all <- gsub("^[[:alpha:]]__", "", taxa_its_all)
+taxa_its_all <- as.data.frame(taxa_its_all)
+
 ps_its_all <- phyloseq(otu_table(readRDS("data/ITS/Both/dada2/seq.tab_all.rds"), taxa_are_rows = FALSE),
                        sample_data(read.csv("doc/ITS_all.csv", row.names = 1)),
-                       tax_table(readRDS("data/ITS/Both/dada2/taxa.rds")))
+                       tax_table(as.matrix(taxa_its_all)))
 
 ```
 
@@ -213,23 +218,22 @@ We continue with the Shannon diversity boxplots of the control samples, for this
 
 
 ```{r Shannon1}
-ctrl_tru <- grepl("ctrl", rownames(otu_table(ps_its_all)))
-ps_its_all_c <- prune_samples(ctrl_tru, ps_its_all)
+ctrl_tru_its <- grepl("ctrl", rownames(otu_table(ps_its_all)))
+ps_its_all_c <- prune_samples(ctrl_tru_its, ps_its_all)
 mat_its_rar_c <- rrarefy(as.matrix(otu_table(ps_its_all_c)), min(rowSums(otu_table(ps_its_all_c))))
 shannon1_its <- diversity(mat_its_rar_c)
 shannon1_its <- melt(shannon1_its)
-shannon1_its$Type <- factor(read.csv("doc/ITS_all.csv")[ctrl_tru,2], levels = c("root", "needle"))
-
-shannon1_its$Timepoint <- as.factor(read.csv("doc/ITS_all.csv")[ctrl_tru,5])
+shannon1_its$Type <- factor(read.csv("doc/ITS_all.csv")[ctrl_tru_its,2], levels = c("root", "needle"))
+shannon1_its$Timepoint <- as.factor(read.csv("doc/ITS_all.csv")[ctrl_tru_its,5])
 shannon1_its$Organism <- as.factor("Fungi")
 
-ctrl_tru2 <- grepl("ctrl", rownames(otu_table(ps_16s_all)))
-ps_16s_all_c <- prune_samples(ctrl_tru2, ps_16s_all)
+ctrl_tru_16s <- grepl("ctrl", rownames(otu_table(ps_16s_all)))
+ps_16s_all_c <- prune_samples(ctrl_tru_16s, ps_16s_all)
 mat_16s_rar_c <- rrarefy(as.matrix(otu_table(ps_16s_all_c)), min(rowSums(otu_table(ps_16s_all_c))))
 shannon1_16s <- diversity(mat_16s_rar_c)
 shannon1_16s <- melt(shannon1_16s)
-shannon1_16s$Type <- factor(read.csv("doc/B16S_all.csv")[ctrl_tru2,2], levels = c("root", "needle"))
-shannon1_16s$Timepoint <- as.factor(read.csv("doc/B16S_all.csv")[ctrl_tru2,5])
+shannon1_16s$Type <- factor(read.csv("doc/B16S_all.csv")[ctrl_tru_16s,2], levels = c("root", "needle"))
+shannon1_16s$Timepoint <- as.factor(read.csv("doc/B16S_all.csv")[ctrl_tru_16s,5])
 shannon1_16s$Organism <- as.factor("Bacteria")
 
 shannon1_all <- rbind(shannon1_its, shannon1_16s)
@@ -254,5 +258,25 @@ ggplot(shannon1_all, aes(x = Type, y = Shannon, fill = Time))+
 ```
 
 Looks very similar to the original figure (except for some minor differences between the timepoints).
+
+Next we want to see how well the taxonomic assignment overlaps in the control samples. In the first result paragraph we read **Both sample types were dominated by the genera Piloderma and Cortinarius (>5%) and by Archaeorhizomyces and Hygrophorus in lower abundance (Supplementary file 19). Piloderma alone accounted for 54 ± 5% and 46 ± 4% (Mean ± standard error) of all fungal ITS reads in the control soil and root samples, respectively.**
+
+```{r}
+seq.tab_its_all2 <- readRDS("data/ITS/Both/dada2/seq.tab_all.rds")
+rowSums(seq.tab_its_all2[ctrl_tru_its,which(taxa_its_all$Genus=="Piloderma")])/rowSums(seq.tab_its_all2[ctrl_tru_its,])
+ctrl_roots_its <- grepl("root.ctrl", rownames(otu_table(ps_its_all)))
+mean(rowSums(seq.tab_its_all2[ctrl_roots_its,which(taxa_its_all$Genus=="Piloderma")])/rowSums(seq.tab_its_all2[ctrl_roots_its,]))
+
+taxa_its_all_OLD <- read.csv("~/TP_v2_dump/taxa_clean_old_red.csv")
+taxa_its_all_OLD <- taxa_its_all_OLD[match(rownames(tax_table(ps_its_all)), taxa_its_all_OLD$ASV),]
+
+mean(rowSums(seq.tab_its_all2[ctrl_roots_its,which(taxa_its_all_OLD$Genus=="Piloderma")])/rowSums(seq.tab_its_all2[ctrl_roots_its,]))
+
+taxa_its_all$ASV <- paste0("ASV", 1:nrow(taxa_its_all))
+taxa_its_all <- taxa_its_all[,c(8,1:7)]
+
+
+```
+
 
 Next we have to perform the same statistical tests to deter
