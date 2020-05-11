@@ -3,11 +3,11 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - bioconductor-dada2=1.12.1
+  - bioconductor-dada2=1.14
   - snakemake-minimal
   - r-here
   - bioconductor-biostrings
-  - cutadapt
+  - cutadapt=2.4
   - biopython
   - pandas
   - sra-tools
