@@ -1,20 +1,13 @@
 #!/bin/bash
 
-set -ex
-​
-for f in J_ITS_N J_ITS_R; do
-    indir=/mnt/picea/projects/metaseq/nstreet/ITS/DeML_TP/$f
-​
-    mkdir -p $indir/DeML_pooled
-​
-    for ff in $(find $indir -name "*_r?.fq.gz"); do
-	bn=$(basename $ff)
-	id=${bn%_*}
-	id2=${id##*_}
-	id3=${id2%.*}
-	echo $id3; done | sort | uniq | while read line;
+indir=$1
+outdir=$2
+
+find $indir -name "*_r1.fq.gz" | sed 's/.[1-3]_r1.fq.gz//g' | \
+    sort | uniq -c | sed 's/^ \+//g' | awk -F ' ' '{if ($1==3) print $2}' | \
+    while read id;
     do
-	cat $indir/demultiplex_${line}.1_r1.fq.gz $indir/demultiplex_${line}.2_r1.fq.gz $indir/demultiplex_${line}.3_r1.fq.gz > $indir/DeML_pooled/${line}_R1.fastq.gz
-	cat $indir/demultiplex_${line}.1_r2.fq.gz $indir/demultiplex_${line}.2_r2.fq.gz $indir/demultiplex_${line}.3_r2.fq.gz > $indir/DeML_pooled/${line}_R2.fastq.gz
+        bn=$(basename $id)
+        gunzip -c $id.1_r1.fq.gz $id.2_r1.fq.gz $id.3_r1.fq.gz | gzip -c > $outdir/${bn}_R1.fastq.gz
+        gunzip -c $id.1_r2.fq.gz $id.2_r2.fq.gz $id.3_r2.fq.gz | gzip -c > $outdir/${bn}_R2.fastq.gz
     done
-done
