@@ -1,0 +1,93 @@
+configfile: "config.yml"
+include: "common.py"
+
+rule all:
+    input:
+        #expand("data/{dir_type}/{sample}_{R}.fastq.gz",
+        #       dir_type=["seqs", "index"], sample=config["samples"].keys(), R=[1, 2])
+        expand("results/report/{sample}.html", sample=config["samples"].keys())
+
+rule download_data:
+    output:
+        R1 = "data/{dir_type}/{sample}_1.fastq.gz",
+        R2 = "data/{dir_type}/{sample}_2.fastq.gz"
+    log:
+        "logs/{sample}.{dir_type}.dump.log"
+    params:
+        acc = lambda wildcards: config["samples"][wildcards.sample][wildcards.dir_type],
+        dir = lambda wildcards, output: os.path.dirname(output.R1),
+        spots = config["maxSpotId"],
+        prefix = "{sample}."
+    shell:
+        """
+        fastq-dump {params.spots} --split-3 --gzip -O {params.dir} \
+            {params.acc} > {log} 2>&1
+        seqtk rename {params.dir}/{params.acc}_1.fastq.gz {params.prefix} | gzip -c > {output.R1}
+        seqtk rename {params.dir}/{params.acc}_2.fastq.gz {params.prefix} | gzip -c > {output.R2}
+        rm {params.dir}/{params.acc}_*.fastq.gz
+        """
+
+rule deML:
+    input:
+        R1 = "data/seqs/{sample}_1.fastq.gz",
+        R2 = "data/seqs/{sample}_2.fastq.gz",
+        i1 = "data/index/{sample}_1.fastq.gz",
+        i2 = "data/index/{sample}_2.fastq.gz",
+        mapfile = lambda wildcards: config["samples"][wildcards.sample]["mapfile"]
+    output:
+        touch("results/intermediate/DeML_TP/{sample}/{sample}.done")
+    log:
+        "logs/{sample}.deML.log"
+    params:
+        prefix = lambda wildcards, output: os.path.splitext(output[0])[0]
+    shell:
+        """
+        deML -f {input.R1} -r {input.R2} -if1 {input.i1} -if2 {input.i2} \
+            -i {input.mapfile} -o {params.prefix} > {log} 2>&1
+        """
+
+rule add_failed:
+    input:
+        "results/intermediate/DeML_TP/{sample}/{sample}.done"
+    output:
+        touch("results/DeML_TP/{sample}/{sample}.done")
+    params:
+        indir = lambda wildcards, input: os.path.dirname(input[0]),
+        outdir = lambda wildcards, output: os.path.dirname(output[0]),
+        strip = "{sample}_"
+    shell:
+        """
+        bash scripts/merge_failed.sh {params.indir} {params.outdir} {params.strip}
+        """
+
+rule fastqc:
+    input:
+        "results/DeML_TP/{sample}/{sample}.done"
+    output:
+        touch("results/intermediate/fastqc/{sample}/{sample}.done")
+    log:
+        "logs/{sample}.fastqc.log"
+    params:
+        indir = lambda wildcards, input: os.path.dirname(input[0]),
+        outdir = lambda wildcards, output: os.path.dirname(output[0])
+    threads: 4
+    shell:
+        """
+        fastqc --no-extract -o {params.outdir} -t {threads} \
+            {params.indir}/*.gz > {log} 2>&1
+        """
+
+rule multiqc:
+    input:
+        "results/intermediate/fastqc/{sample}/{sample}.done"
+    output:
+        "results/report/{sample}.html"
+    log:
+        "logs/{sample}.multiqc.log"
+    params:
+        indir = lambda wildcards, input: os.path.dirname(input[0]),
+        outdir = lambda wildcards, output: os.path.dirname(output[0])
+    shell:
+        """
+        multiqc -o {params.outdir} -n {wildcards.sample} {params.indir} > {log} 2>&1
+        """
