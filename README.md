@@ -1,6 +1,6 @@
 # Amplicon data preprocessing and analysis workflow for Schneider et al.
 
-This repository contains code to analyse the ITS amplicon sequencing data with DADA2 for further comparisons with RNA-seq data from the same samples. It uses data collected for Haas et al (2018) but with a different method. 
+This repository contains code to analyse the ITS amplicon sequencing data with DADA2 for further comparisons with RNA-seq data from the same samples. It uses data collected for Haas et al (2018) but processed with a different method. 
 
 ## Abstract
 
