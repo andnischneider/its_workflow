@@ -41,4 +41,4 @@ COPY config.yml .
 COPY scripts scripts
 COPY info info
 
-CMD ["/bin/bash"]
+ENTRYPOINT ["snakemake", "-j", "4", "-p"]
