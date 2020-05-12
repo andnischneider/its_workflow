@@ -3,9 +3,9 @@ include: "common.py"
 
 rule all:
     input:
-        #expand("data/{dir_type}/{sample}_{R}.fastq.gz",
-        #       dir_type=["seqs", "index"], sample=config["samples"].keys(), R=[1, 2])
-        expand("results/report/{sample}.html", sample=config["samples"].keys())
+        expand("results/report/{indir}/{indir}.{sample}.html",
+               sample=config["samples"].keys(),
+               indir=["DeML", "DeML_pooled"])
 
 rule download_data:
     output:
@@ -35,7 +35,7 @@ rule deML:
         i2 = "data/index/{sample}_2.fastq.gz",
         mapfile = lambda wildcards: config["samples"][wildcards.sample]["mapfile"]
     output:
-        touch("results/intermediate/DeML_TP/{sample}/{sample}.done")
+        touch("results/intermediate/DeML/{sample}/{sample}.done")
     log:
         "logs/{sample}.deML.log"
     params:
@@ -48,9 +48,9 @@ rule deML:
 
 rule add_failed:
     input:
-        "results/intermediate/DeML_TP/{sample}/{sample}.done"
+        "results/intermediate/DeML/{sample}/{sample}.done"
     output:
-        touch("results/DeML_TP/{sample}/{sample}.done")
+        touch("results/DeML/{sample}/{sample}.done")
     params:
         indir = lambda wildcards, input: os.path.dirname(input[0]),
         outdir = lambda wildcards, output: os.path.dirname(output[0]),
@@ -62,11 +62,11 @@ rule add_failed:
 
 rule fastqc:
     input:
-        "results/DeML_TP/{sample}/{sample}.done"
+        "results/{indir}/{sample}/{sample}.done"
     output:
-        touch("results/intermediate/fastqc/{sample}/{sample}.done")
+        touch("results/intermediate/fastqc/{indir}/{sample}/{sample}.done")
     log:
-        "logs/{sample}.fastqc.log"
+        "logs/{sample}.{indir}.fastqc.log"
     params:
         indir = lambda wildcards, input: os.path.dirname(input[0]),
         outdir = lambda wildcards, output: os.path.dirname(output[0])
@@ -79,15 +79,29 @@ rule fastqc:
 
 rule multiqc:
     input:
-        "results/intermediate/fastqc/{sample}/{sample}.done"
+        "results/intermediate/fastqc/{indir}/{sample}/{sample}.done"
     output:
-        "results/report/{sample}.html"
+        "results/report/{indir}/{indir}.{sample}.html"
     log:
-        "logs/{sample}.multiqc.log"
+        "logs/{sample}.{indir}.multiqc.log"
     params:
         indir = lambda wildcards, input: os.path.dirname(input[0]),
         outdir = lambda wildcards, output: os.path.dirname(output[0])
     shell:
         """
-        multiqc -o {params.outdir} -n {wildcards.sample} {params.indir} > {log} 2>&1
+        multiqc -o {params.outdir} -n {wildcards.indir}.{wildcards.sample} \
+            {params.indir} > {log} 2>&1
+        """
+
+rule merge_reps:
+    input:
+        "results/DeML/{sample}/{sample}.done"
+    output:
+        touch("results/DeML_pooled/{sample}/{sample}.done")
+    params:
+        indir = lambda wildcards, input: os.path.dirname(input[0]),
+        outdir = lambda wildcards, output: os.path.dirname(output[0])
+    shell:
+        """
+        bash scripts/mergeTechRepsITS.sh {params.indir} {params.outdir}
         """
