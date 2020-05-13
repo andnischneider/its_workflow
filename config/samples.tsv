@@ -1,4 +1,4 @@
-sample_name	run_id	sample_type	sra_id
+sample	run_id	sample_type	sra_id
 B1_S_ITS	1	soil	SRR11668751
 E5_S_ITS	1	soil	SRR11668753
 E4_S_ITS	1	soil	SRR11668754

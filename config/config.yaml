@@ -3,7 +3,7 @@ samples: "config/samples.tsv"
 data_dir: "data"
 results_dir: "results"
 
-# Testing
+# Run in test-mode to only use a subset of reads
 test: True
 
 # Performance
