@@ -7,7 +7,8 @@ rule all:
     input:
         #expand(opj(config["results_dir"],"dada2","ITS","dada_{x}.rds"), x=["f","r"]),
         #expand(opj(config["results_dir"],"dada2","ITS","{y}.rds"), y=["mergers","seqtab"])
-        expand(opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_R{i}.fastq.gz"),
+        expand(opj(config["results_dir"], "intermediate", "preprocess",
+                 "prefilter", "{pool_id}_R{i}.fastq.gz"),
                pool_id = pools.keys(), i = [1,2])
 
 rule fastq_dump:
@@ -54,19 +55,29 @@ rule prefilter:
         R2 = opj(config["results_dir"], "intermediate", "pooled",
                  "{pool_id}_R2.fastq.gz")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "preprocess", "ITS",
-                 "filtN", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "preprocess", "ITS",
-                 "filtN", "{pool_id}_R2.fastq.gz"),
-    shell:
-        """
-        Rscript src/R/prefilter.R {input.R1} {input.R2} {output.R1} {output.R2}
-        """
+        R1 = opj(config["results_dir"], "intermediate", "preprocess",
+                 "prefilter", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "preprocess",
+                 "prefilter", "{pool_id}_R2.fastq.gz")
+    log:
+        opj("logs", "{pool_id}", "prefilter.log")
+    threads: 4
+    params:
+        truncLen = config["dada2"]["truncLen"],
+        maxN = config["dada2"]["maxN"],
+        maxEE = config["dada2"]["maxEE"],
+        rm_phix = config["dada2"]["rm_phix"],
+        minLen = config["dada2"]["minLen"],
+        truncQ = config["dada2"]["truncQ"]
+    conda:
+        "envs/dada2.yml"
+    script:
+        "src/R/prefilter.R"
 
 rule generate_revcomp:
     output:
-        fwd_rc = opj(config["results_dir"], "preprocess", "fwd_rc"),
-        rev_rc = opj(config["results_dir"], "preprocess", "rev_rc")
+        fwd_rc = temp(opj(config["results_dir"], "preprocess", "fwd_rc")),
+        rev_rc = temp(opj(config["results_dir"], "preprocess", "rev_rc"))
     params:
         fwd = config["cutadapt"]["FWD"],
         rev = config["cutadapt"]["REV"]
@@ -81,13 +92,13 @@ rule generate_revcomp:
 rule cut_ITS_primers:
     """Removes primers from ITS data using cutadapt"""
     input:
-        R1=opj(config["results_dir"],"preprocess","ITS","filtN","{sample}_R1.fastq.gz"),
-        R2=opj(config["results_dir"],"preprocess","ITS","filtN","{sample}_R2.fastq.gz"),
+        R1 = opj(config["results_dir"], "preprocess", "prefilter", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "preprocess", "prefilter", "{pool_id}_R2.fastq.gz"),
         fwd_rc = opj(config["results_dir"], "preprocess", "fwd_rc"),
         rev_rc = opj(config["results_dir"], "preprocess", "rev_rc")
     output:
-        R1=opj(config["results_dir"],"preprocess","ITS","R1","{sample}_R1.fastq.gz"),
-        R2=opj(config["results_dir"],"preprocess","ITS","R2","{sample}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "preprocess", "cutadapt", "R1","{sample}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "preprocess", "cutadapt", "R2","{sample}_R2.fastq.gz")
     log:
         "logs/cutadapt/{sample}.cutadapt.log"
     params:
