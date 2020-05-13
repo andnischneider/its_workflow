@@ -23,4 +23,3 @@ dada2:
   truncLen: 0
   truncQ: 2
   minLen: 50
-  rm_phix: True
