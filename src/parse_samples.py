@@ -10,16 +10,13 @@ def get_samples(f, config):
     df = pd.read_csv(f, sep="\t", header=0)
     for i in df.index:
         r = df.loc[i]
+        pool_id = r.sample_name
         try:
             run_id = r.run_id
-        except KeyError:
-            run_id = "1"
-        pool_id = r.sample_name
-        sample_id = "{}.{}".format(pool_id, run_id)
-        if "url" in df.columns:
-            source = r["url"]
-            config["source"] = "url"
-        elif "sra_id" in df.columns:
+            sample_id = "{}.{}".format(pool_id, run_id)
+        except AttributeError:
+            sample_id = r.sample_name
+        if "sra_id" in df.columns:
             source = r["sra_id"]
             config["source"] = "sra"
         else:
