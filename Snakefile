@@ -5,11 +5,11 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        expand(opj(config["results_dir"],"dada2", "dada_{x}.rds"), x=["f","r"]),
+        expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f","r"]),
         #expand(opj(config["results_dir"],"dada2", "{y}.rds"), y=["mergers","seqtab"])
-        expand(opj(config["results_dir"], "intermediate",
-                 "cutadapt", "R1", "{pool_id}_R1.fastq.gz"),
-               pool_id = pools.keys())
+        #expand(opj(config["results_dir"], "intermediate",
+        #         "cutadapt", "R1", "{pool_id}_R1.fastq.gz"),
+        #       pool_id = pools.keys())
 
 rule fastq_dump:
     output:
@@ -60,17 +60,10 @@ rule prefilter:
     log:
         opj("logs", "prefilter", "{pool_id}.log")
     threads: config["threads"]
-    params:
-        truncLen = config["dada2"]["truncLen"],
-        maxN = config["dada2"]["maxN"],
-        maxEE = config["dada2"]["maxEE"],
-        rm_phix = config["dada2"]["rm_phix"],
-        minLen = config["dada2"]["minLen"],
-        truncQ = config["dada2"]["truncQ"]
     conda:
         "envs/dada2.yml"
     script:
-        "src/R/prefilter.R"
+        "src/R/filter.R"
 
 rule generate_revcomp:
     output:
@@ -95,8 +88,8 @@ rule cut_ITS_primers:
         fwd_rc = opj(config["results_dir"], "intermediate", "fwd_rc"),
         rev_rc = opj(config["results_dir"], "intermediate", "rev_rc")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "R1", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "R2", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
     log:
         opj("logs", "cutadapt", "{pool_id}.log")
     params:
@@ -117,13 +110,34 @@ rule cut_ITS_primers:
          {input.R1} {input.R2} > {log} 2>&1
         """
 
+rule filterAndTrim:
+    input:
+        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
+    output:
+        R1 = opj(config["results_dir"], "intermediate", "filtertrim", "R1", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "filtertrim", "R2", "{pool_id}_R2.fastq.gz")
+    log:
+        opj("logs", "filtertrim", "{pool_id}.log")
+    threads: config["threads"]
+    conda:
+        "envs/dada2.yml"
+    params:
+        maxN = config["dada2"]["maxN"],
+        truncQ = config["dada2"]["truncQ"],
+        truncLen = config["dada2"]["truncLen"],
+        maxEE = config["dada2"]["maxEE"],
+        minLen = config["dada2"]["minLen"]
+    script:
+        "src/R/filter.R"
+
 rule dada2:
     """Calls DADA2 Rscript with trimmed input"""
     input:
-        expand(opj(config["results_dir"], "intermediate", "cutadapt", "R1",
+        expand(opj(config["results_dir"], "intermediate", "filtertrim", "R1",
                          "{pool_id}_R1.fastq.gz"),
                      pool_id = pools.keys()),
-        expand(opj(config["results_dir"], "intermediate", "cutadapt", "R2",
+        expand(opj(config["results_dir"], "intermediate", "filtertrim", "R2",
                          "{pool_id}_R2.fastq.gz"),
                      pool_id = pools.keys())
     output:
