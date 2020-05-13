@@ -8,3 +8,6 @@ Comparison_files
 logs
 .#*
 results
+*__pycache__
+.snakemake
+.idea
