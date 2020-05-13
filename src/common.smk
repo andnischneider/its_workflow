@@ -12,11 +12,6 @@ else:
     config["maxSpotId"] = ""
 samples, pools, config = get_samples(config["sample_file"], config)
 
-if config["source"] == "sra":
-    ruleorder: fastq_dump > download_sample
-elif config["source"] == "url":
-    ruleorder: download_sample > fastq_dump
-
 def get_files(wildcards):
     suffix = "_{}.fastq.gz".format(wildcards.R)
     files = []
