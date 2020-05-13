@@ -113,16 +113,6 @@ rule cut_ITS_primers:
          -n 2 -o {output.R1} -p {output.R2} {input.R1} {input.R2} > {log} 2>&1
         """
 
-rule stage_16S:
-    input:
-        opj(config["results_dir"],"preprocess","staged","{sample}_{R}.fastq.gz")
-    output:
-        opj(config["results_dir"],"preprocess","16S","{R}","{sample}_{R}.fastq.gz")
-    shell:
-        """
-        ln -s {input} {output}
-        """
-
 def get_dada_input(wildcards):
     files = []
     for sample in samples.keys():
