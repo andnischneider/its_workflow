@@ -150,8 +150,9 @@ rule dada2:
         rv_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R2"),
         out_dir = opj(config["results_dir"], "dada2")
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
-    threads: config["threads"]
+        runtime = lambda wildcards, attempt: attempt**2*60*48,
+        mem_mb = 64000
+    threads: 8
     conda:
         "envs/dada2.yml"
     shell:
