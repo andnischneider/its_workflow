@@ -4,6 +4,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - snakemake-minimal
-  - pandas
+  - python=3.6.10
+  - snakemake-minimal=5.9.1
+  - pandas=1.0.3
