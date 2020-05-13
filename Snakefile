@@ -5,20 +5,23 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        expand(opj(config["results_dir"],"dada2","ITS","dada_{x}.rds"), x=["f","r"]),
-        expand(opj(config["results_dir"],"dada2","ITS","{y}.rds"), y=["mergers","seqtab"])
-
+        #expand(opj(config["results_dir"],"dada2","ITS","dada_{x}.rds"), x=["f","r"]),
+        #expand(opj(config["results_dir"],"dada2","ITS","{y}.rds"), y=["mergers","seqtab"])
+        expand(opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_R{i}.fastq.gz"),
+               pool_id = pools.keys(), i = [1,2])
 
 rule fastq_dump:
     output:
-        R1 = opj(config["data_dir"], "{sample_id}_1.fastq.gz"),
-        R2 = opj(config["data_dir"], "{sample_id}_2.fastq.gz")
+        R1 = opj(config["data_dir"], "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["data_dir"], "{sample_id}_R2.fastq.gz")
     log:
         opj("logs","{sample_id}.fastq_dump.log")
     params:
         data_dir = lambda wildcards, output: os.path.dirname(output.R1),
         acc = lambda wildcards: samples[wildcards.sample_id],
         spots = config["maxSpotId"]
+    conda:
+        "envs/sratools.yml"
     shell:
         """
         fastq-dump {params.spots} --split-3 --gzip -O {params.data_dir} \
@@ -27,39 +30,21 @@ rule fastq_dump:
         mv {params.data_dir}/{params.acc}_2.fastq.gz {output.R2}
         """
 
-rule download_sample:
-    output:
-        R1 = opj(config["data_dir"], "{sample_id}_1.fastq.gz"),
-        R2 = opj(config["data_dir"], "{sample_id}_2.fastq.gz")
-    log:
-        opj("logs","{sample_id}.curl.log")
-    params:
-        data_dir = lambda wildcards, output: os.path.dirname(output.R1),
-        url = lambda wildcards: samples[wildcards.sample_id]
-    shell:
-        """
-        curl -L -o {params.data_dir}/{wildcards.sample_id}.tar.gz \
-            {params.url} > {log} 2>&1
-        tar -C {params.data_dir} xzf {params.data_dir}/{wildcards.sample_id}.tar.gz
-        rm {params.data_dir}/{wildcards.sample_id}.tar.gz
-        """
-
 rule pool:
     """Collect all samples with same sampleName but different runID"""
     input:
-        R1 = lambda wildcards: pools[wildcards.pool_id]["R1"],
-        R2 = lambda wildcards: pools[wildcards.pool_id]["R2"]
+        lambda wildcards: pools[wildcards.pool_id][wildcards.R]
     output:
-        R1 = opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_R2.fastq.gz")
+        opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_{R}.fastq.gz"),
     message:
-        "Pooling samples for {wildcards.pool_id}"
-    shell:
-        """
-        gunzip -c {input.R1} | gzip -c > {output.R1}
-        gunzip -c {input.R2} | gzip -c > {output.R2}
-        """
-
+        "Pooling {wildcards.pool_id}_R{wildcards.R}.fastq.gz"
+    run:
+        if len(input) == 1:
+            src = os.path.abspath(input[0])
+            dst = os.path.abspath(output[0])
+            shell("ln -s {src} {dst}")
+        else:
+            shell("gunzip -c {input} | gzip -c > {output}")
 
 rule prefilter:
     """Runs the ITS prefiltering step for ambiguous bases"""
@@ -78,24 +63,42 @@ rule prefilter:
         Rscript src/R/prefilter.R {input.R1} {input.R2} {output.R1} {output.R2}
         """
 
+rule generate_revcomp:
+    output:
+        fwd_rc = opj(config["results_dir"], "preprocess", "fwd_rc"),
+        rev_rc = opj(config["results_dir"], "preprocess", "rev_rc")
+    params:
+        fwd = config["cutadapt"]["FWD"],
+        rev = config["cutadapt"]["REV"]
+    conda:
+        "envs/biopython.yml"
+    shell:
+        """
+        python src/revcomp.py {params.fwd} > {output.fwd_rc}
+        python src/revcomp.py {params.rev} > {output.rev_rc}
+        """
+
 rule cut_ITS_primers:
     """Removes primers from ITS data using cutadapt"""
     input:
         R1=opj(config["results_dir"],"preprocess","ITS","filtN","{sample}_R1.fastq.gz"),
-        R2=opj(config["results_dir"],"preprocess","ITS","filtN","{sample}_R2.fastq.gz")
+        R2=opj(config["results_dir"],"preprocess","ITS","filtN","{sample}_R2.fastq.gz"),
+        fwd_rc = opj(config["results_dir"], "preprocess", "fwd_rc"),
+        rev_rc = opj(config["results_dir"], "preprocess", "rev_rc")
     output:
         R1=opj(config["results_dir"],"preprocess","ITS","R1","{sample}_R1.fastq.gz"),
         R2=opj(config["results_dir"],"preprocess","ITS","R2","{sample}_R2.fastq.gz")
     log:
         "logs/cutadapt/{sample}.cutadapt.log"
     params:
-        FWD=config["ITS"]["FWD"],
-        REV=config["ITS"]["REV"],
-        FWD_RC=config["ITS"]["FWD_RC"],
-        REV_RC=config["ITS"]["REV_RC"]
+        FWD=config["cutadapt"]["FWD"],
+        REV=config["cutadapt"]["REV"]
     shell:
         """
-        cutadapt -g {params.FWD} -a {params.REV_RC} -G {params.REV} -A {params.FWD_RC} \
+        A=$(cat {input.fwd_rc})
+        a=$(cat {input.rev_rc})
+        
+        cutadapt -g {params.FWD} -a $a -G {params.REV} -A $A \
          -n 2 -o {output.R1} -p {output.R2} {input.R1} {input.R2} > {log} 2>&1
         """
 
