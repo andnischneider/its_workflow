@@ -10,9 +10,12 @@ test: True
 threads: 8
 
 # Parameters
-ITS:
+cutadapt:
   FWD: "CTTGGTCATTTAGAGGAAGTAA"
   REV: "GCTGCGTTCTTCATCGATGC"
+
+# Dada2 filter and trim
+dada2:
   filter_trim_params:
     maxN: 0
     maxEE: "c(6,6)"
@@ -20,15 +23,3 @@ ITS:
     truncQ: 2
     minLen: 50
     rm_phix: True
-16S:
-  filter_trim_params:
-    maxN: 0
-    maxEE: "c(3,3)"
-    truncLen: "c(190,190)"
-    truncQ: 2
-    minLen: 20
-    rm_phix: True
-
-# Preprocessing
-demultiplex: True
-pool: False
