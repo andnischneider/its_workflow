@@ -1,5 +1,5 @@
 # Paths
-sample_file: "samples.tsv"
+samples: "config/samples.tsv"
 data_dir: "data"
 results_dir: "results"
 

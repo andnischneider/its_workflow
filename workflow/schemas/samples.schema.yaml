@@ -1,0 +1,19 @@
+$schema: "http://json-schema.org/draft-04/schema#"
+
+description: an entry in the sample sheet
+
+# columns that the config/samples.tsv file can have and which type they should be
+properties:
+  sample_name:
+    type: string
+    description: sample name/identifier
+  sra_id:
+    type: string
+    description: SRA run accession for sample. Will be used to download the raw data.
+  run_id:
+    type: integer
+    description: Run identifier. Can be used to pool samples by technical replicates.
+
+# columns that the config/samples.tsv file must have to pass schema validation
+required:
+  - sample_name
