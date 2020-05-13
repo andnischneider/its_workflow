@@ -13,6 +13,8 @@ threads: 8
 cutadapt:
   FWD: "CTTGGTCATTTAGAGGAAGTAA"
   REV: "GCTGCGTTCTTCATCGATGC"
+  n: 2
+  minimum_length: 50
 
 # Dada2
 dada2:
