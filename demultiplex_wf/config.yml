@@ -8,5 +8,5 @@ samples:
       index: "ERR2027945"
       mapfile: "info/ITS_root.txt"
 
-test: True
-spots: 100000
+test: False
+spots: 1000
