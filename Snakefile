@@ -146,8 +146,8 @@ rule dada2:
     log:
         opj("logs", "dada2", "dada2.log")
     params:
-        fw_dir = opj(config["results_dir"], "intermediate", "cutadapt", "R1"),
-        rv_dir = opj(config["results_dir"], "intermediate", "cutadapt", "R2"),
+        fw_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R1"),
+        rv_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R2"),
         out_dir = opj(config["results_dir"], "dada2")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
