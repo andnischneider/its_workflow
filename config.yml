@@ -14,12 +14,11 @@ cutadapt:
   FWD: "CTTGGTCATTTAGAGGAAGTAA"
   REV: "GCTGCGTTCTTCATCGATGC"
 
-# Dada2 filter and trim
+# Dada2
 dada2:
-  filter_trim_params:
-    maxN: 0
-    maxEE: "c(6,6)"
-    truncLen: 0
-    truncQ: 2
-    minLen: 50
-    rm_phix: True
+  maxN: 0
+  maxEE: "c(6,6)"
+  truncLen: 0
+  truncQ: 2
+  minLen: 50
+  rm_phix: True
