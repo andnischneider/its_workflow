@@ -132,9 +132,9 @@ rule dada2:
     log:
         opj("logs", "dada2", "dada2.log")
     params:
-        fw_dir = lambda wildcards, input: os.path.dirname(input[0][0]),
-        rv_dir = lambda wildcards, input: os.path.dirname(input[1][0]),
-        out_dir = lambda wildcards, output: os.path.dirname(output[0][0])
+        fw_dir = opj(config["results_dir"], "intermediate", "cutadapt", "R1"),
+        rv_dir = opj(config["results_dir"], "intermediate", "cutadapt", "R2"),
+        out_dir = opj(config["results_dir"], "dada2")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     threads: config["threads"]
@@ -142,5 +142,6 @@ rule dada2:
         "envs/dada2.yml"
     shell:
         """
-        rundada2.R {params.fw_dir} {params.rv_dir} {params.out_dir} {threads} > {log} 2>&1
+        Rscript --vanilla src/R/rundada2.R {params.fw_dir} {params.rv_dir} \
+            {params.out_dir} {threads} > {log} 2>&1
         """
