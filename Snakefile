@@ -5,8 +5,8 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        #expand(opj(config["results_dir"],"dada2","ITS","dada_{x}.rds"), x=["f","r"]),
-        #expand(opj(config["results_dir"],"dada2","ITS","{y}.rds"), y=["mergers","seqtab"])
+        expand(opj(config["results_dir"],"dada2", "dada_{x}.rds"), x=["f","r"]),
+        #expand(opj(config["results_dir"],"dada2", "{y}.rds"), y=["mergers","seqtab"])
         expand(opj(config["results_dir"], "intermediate",
                  "cutadapt", "R1", "{pool_id}_R1.fastq.gz"),
                pool_id = pools.keys())
@@ -102,7 +102,9 @@ rule cut_ITS_primers:
     params:
         FWD = config["cutadapt"]["FWD"],
         REV = config["cutadapt"]["REV"],
-        n = config["cutadapt"]["n"]
+        n = config["cutadapt"]["n"],
+        min_len = config["cutadapt"]["minimum_length"]
+    threads: config["threads"]
     conda:
         "envs/cutadapt.yml"
     shell:
@@ -110,18 +112,19 @@ rule cut_ITS_primers:
         A=$(cat {input.fwd_rc})
         a=$(cat {input.rev_rc})
         
-        cutadapt -g {params.FWD} -a $a -G {params.REV} -A $A \
-         -n {params.n} -o {output.R1} -p {output.R2} {input.R1} {input.R2} > {log} 2>&1
+        cutadapt -g {params.FWD} -a $a -G {params.REV} -A $A -j {threads} \
+         -n {params.n} -o {output.R1} -p {output.R2} --minimum-length {params.min_len} \
+         {input.R1} {input.R2} > {log} 2>&1
         """
 
 rule dada2:
     """Calls DADA2 Rscript with trimmed input"""
     input:
-        expand(opj(config["results_dir"], "intermediate", "cutadapt",
+        expand(opj(config["results_dir"], "intermediate", "cutadapt", "R1",
                          "{pool_id}_R1.fastq.gz"),
                      pool_id = pools.keys()),
-        expand(opj(config["results_dir"], "intermediate", "cutadapt",
-                         "{pool_id}_R1.fastq.gz"),
+        expand(opj(config["results_dir"], "intermediate", "cutadapt", "R2",
+                         "{pool_id}_R2.fastq.gz"),
                      pool_id = pools.keys())
     output:
         expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f", "r"]),
@@ -131,10 +134,12 @@ rule dada2:
     params:
         fw_dir = lambda wildcards, input: os.path.dirname(input[0][0]),
         rv_dir = lambda wildcards, input: os.path.dirname(input[1][0]),
-        out_dir = opj(config["results_dir"], "dada2")
+        out_dir = lambda wildcards, output: os.path.dirname(output[0][0])
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     threads: config["threads"]
+    conda:
+        "envs/dada2.yml"
     shell:
         """
         rundada2.R {params.fw_dir} {params.rv_dir} {params.out_dir} {threads} > {log} 2>&1
