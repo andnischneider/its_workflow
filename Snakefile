@@ -7,16 +7,16 @@ rule all:
     input:
         #expand(opj(config["results_dir"],"dada2","ITS","dada_{x}.rds"), x=["f","r"]),
         #expand(opj(config["results_dir"],"dada2","ITS","{y}.rds"), y=["mergers","seqtab"])
-        expand(opj(config["results_dir"], "intermediate", "preprocess",
-                 "prefilter", "{pool_id}_R{i}.fastq.gz"),
-               pool_id = pools.keys(), i = [1,2])
+        expand(opj(config["results_dir"], "intermediate",
+                 "cutadapt", "R1", "{pool_id}_R1.fastq.gz"),
+               pool_id = pools.keys())
 
 rule fastq_dump:
     output:
         R1 = opj(config["data_dir"], "{sample_id}_R1.fastq.gz"),
         R2 = opj(config["data_dir"], "{sample_id}_R2.fastq.gz")
     log:
-        opj("logs","{sample_id}.fastq_dump.log")
+        opj("logs","sra-tools", "{sample_id}.log")
     params:
         data_dir = lambda wildcards, output: os.path.dirname(output.R1),
         acc = lambda wildcards: samples[wildcards.sample_id],
@@ -55,13 +55,11 @@ rule prefilter:
         R2 = opj(config["results_dir"], "intermediate", "pooled",
                  "{pool_id}_R2.fastq.gz")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "preprocess",
-                 "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "preprocess",
-                 "prefilter", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz")
     log:
-        opj("logs", "{pool_id}", "prefilter.log")
-    threads: 4
+        opj("logs", "prefilter", "{pool_id}.log")
+    threads: config["threads"]
     params:
         truncLen = config["dada2"]["truncLen"],
         maxN = config["dada2"]["maxN"],
@@ -76,8 +74,8 @@ rule prefilter:
 
 rule generate_revcomp:
     output:
-        fwd_rc = temp(opj(config["results_dir"], "preprocess", "fwd_rc")),
-        rev_rc = temp(opj(config["results_dir"], "preprocess", "rev_rc"))
+        fwd_rc = temp(opj(config["results_dir"], "intermediate", "fwd_rc")),
+        rev_rc = temp(opj(config["results_dir"], "intermediate", "rev_rc"))
     params:
         fwd = config["cutadapt"]["FWD"],
         rev = config["cutadapt"]["REV"]
@@ -92,18 +90,20 @@ rule generate_revcomp:
 rule cut_ITS_primers:
     """Removes primers from ITS data using cutadapt"""
     input:
-        R1 = opj(config["results_dir"], "preprocess", "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "preprocess", "prefilter", "{pool_id}_R2.fastq.gz"),
-        fwd_rc = opj(config["results_dir"], "preprocess", "fwd_rc"),
-        rev_rc = opj(config["results_dir"], "preprocess", "rev_rc")
+        R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz"),
+        fwd_rc = opj(config["results_dir"], "intermediate", "fwd_rc"),
+        rev_rc = opj(config["results_dir"], "intermediate", "rev_rc")
     output:
-        R1 = opj(config["results_dir"], "preprocess", "cutadapt", "R1","{sample}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "preprocess", "cutadapt", "R2","{sample}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "R1", "{pool_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "R2", "{pool_id}_R2.fastq.gz")
     log:
-        "logs/cutadapt/{sample}.cutadapt.log"
+        opj("logs", "cutadapt", "{pool_id}.log")
     params:
         FWD=config["cutadapt"]["FWD"],
         REV=config["cutadapt"]["REV"]
+    conda:
+        "envs/cutadapt.yml"
     shell:
         """
         A=$(cat {input.fwd_rc})
@@ -113,28 +113,24 @@ rule cut_ITS_primers:
          -n 2 -o {output.R1} -p {output.R2} {input.R1} {input.R2} > {log} 2>&1
         """
 
-def get_dada_input(wildcards):
-    files = []
-    for sample in samples.keys():
-        for runID in samples[sample].keys():
-            if list(samples[sample][runID].keys())[0] == wildcards.gene:
-                files.append(opj(config["results_dir"],"preprocess",wildcards.gene,"R1",sample+"_R1.fastq.gz"))
-                files.append(opj(config["results_dir"],"preprocess",wildcards.gene,"R2",sample+"_R2.fastq.gz"))
-    return files
-
 rule dada2:
     """Calls DADA2 Rscript with trimmed input"""
     input:
-         get_dada_input
+        expand(opj(config["results_dir"], "intermediate", "cutadapt",
+                         "{pool_id}_R1.fastq.gz"),
+                     pool_id = pools.keys()),
+        expand(opj(config["results_dir"], "intermediate", "cutadapt",
+                         "{pool_id}_R1.fastq.gz"),
+                     pool_id = pools.keys())
     output:
-        expand(opj(config["results_dir"],"dada2","{{gene}}","dada_{x}.rds"), x=["f","r"]),
-        expand(opj(config["results_dir"],"dada2","{{gene}}","{y}.rds"), y=["mergers","seqtab"])
+        expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f", "r"]),
+        expand(opj(config["results_dir"], "dada2", "{y}.rds"), y=["mergers", "seqtab"])
     log:
-        "logs/dada2/{gene}.dada2.log"
+        opj("logs", "dada2", "dada2.log")
     params:
-        fw_dir=opj(config["results_dir"],"preprocess","{gene}","R1"),
-        rv_dir=opj(config["results_dir"],"preprocess","{gene}","R2"),
-        out_dir=opj(config["results_dir"],"dada2","{gene}")
+        fw_dir = lambda wildcards, input: os.path.dirname(input[0][0]),
+        rv_dir = lambda wildcards, input: os.path.dirname(input[1][0]),
+        out_dir = opj(config["results_dir"], "dada2")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     threads: config["threads"]
