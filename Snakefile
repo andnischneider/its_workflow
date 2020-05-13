@@ -100,8 +100,9 @@ rule cut_ITS_primers:
     log:
         opj("logs", "cutadapt", "{pool_id}.log")
     params:
-        FWD=config["cutadapt"]["FWD"],
-        REV=config["cutadapt"]["REV"]
+        FWD = config["cutadapt"]["FWD"],
+        REV = config["cutadapt"]["REV"],
+        n = config["cutadapt"]["n"]
     conda:
         "envs/cutadapt.yml"
     shell:
@@ -110,7 +111,7 @@ rule cut_ITS_primers:
         a=$(cat {input.rev_rc})
         
         cutadapt -g {params.FWD} -a $a -G {params.REV} -A $A \
-         -n 2 -o {output.R1} -p {output.R2} {input.R1} {input.R2} > {log} 2>&1
+         -n {params.n} -o {output.R1} -p {output.R2} {input.R1} {input.R2} > {log} 2>&1
         """
 
 rule dada2:
