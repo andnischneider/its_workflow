@@ -1,15 +1,9 @@
 configfile: "config.yml"
-from Bio.Seq import reverse_complement
 from os.path import join as opj
 from src.parse_samples import get_samples
 
 wildcard_constraints:
     run = "\d+"
-
-if config["ITS"]["FWD"]:
-    config["ITS"]["FWD_RC"] = reverse_complement(config["ITS"]["FWD"])
-if config["ITS"]["REV"]:
-    config["ITS"]["REV_RC"] = reverse_complement(config["ITS"]["REV"])
 
 # Use only a small set of reads if testing the workflow
 if config["test"]:
