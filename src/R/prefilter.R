@@ -1,21 +1,23 @@
 #!/usr/bin/env Rscript
 
+print(snakemake@params$maxN)
+
+if ()
+
 require(dada2, quietly = TRUE)
-# IO
-R1 <- snakemake@input$R1
-R2 <- snakemake@input$R2
-R1_o <- snakemake@output$R1
-R2_o <- snakemake@output$R2
+
 # Parameters
-maxN <- snakemake@params$maxN
-truncQ <- snakemake@params$truncQ
-truncLen <- snakemake@params$truncLen
-maxEE <- snakemake@params$maxEE
-rm_phix <- snakemake@params$rm_phix
-minLen <- snakemake@params$minLen
+if (is.null(snakemake@params$maxN)) {snakemake@params$maxN <- 0}
+if (is.null(snakemake@params$truncQ)) {snakemake@params$truncQ <- 2}
+if (is.null(snakemake@params$truncLen)) {snakemake@params$truncLen <- 0}
+if (is.null(snakemake@params$maxEE)) {snakemake@params$maxEE <- Inf}
+if (is.null(snakemake@params$rm_phix)) {snakemake@params$rm_phix <- TRUE}
+if (is.null(snakemake@params$minLen)) {snakemake@params$minLen <- 0}
 # Performance
 threads <- snakemake@threads
 
-filterAndTrim(fwd = R1, filt = R1_o, rev = R2, filt.rev = R2_o,
-              maxN = maxN, truncQ = truncQ, maxEE = maxEE, rm.phix = rm_phix,
-              minLen = minLen, multithread = threads)
+filterAndTrim(fwd = snakemake@input$R1, filt = snakemake@output$R1,
+              rev = snakemake@input$R2, filt.rev = snakemake@output$R2,
+              maxN = snakemake@params$maxN, truncQ = snakemake@params$truncQ,
+              maxEE = snakemake@params$maxEE, rm.phix = snakemake@params$rm_phix,
+              minLen = snakemake@params$minLen, multithread = threads)
