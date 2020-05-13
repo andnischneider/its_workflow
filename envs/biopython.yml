@@ -1,9 +1,8 @@
-name: amplicon_wf
+name: biopython
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - snakemake-minimal
-  - pandas
+  - biopython=1.70
+  - python=3.5.5
