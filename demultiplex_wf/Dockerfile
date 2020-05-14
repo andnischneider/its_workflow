@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
 LABEL maintainer="John Sundh" email=john.sundh@nbis.se
-LABEL description="Image to run snakemake ITS amplicon workflow"
+LABEL description="Image to run demultiplexing + concatenation of ITS data"
 
 # Use bash as shell
 SHELL ["/bin/bash", "-c"]
@@ -34,7 +34,11 @@ COPY environment.yml .
 RUN conda env update -f environment.yml -n base && conda clean --all
 
 # Add workflow
-COPY config config
-COPY workflow workflow
+COPY bin/deML /usr/miniconda3/bin/deML
+COPY Snakefile .
+COPY common.py .
+COPY config.yml .
+COPY scripts scripts
+COPY info info
 
-ENTRYPOINT ["snakemake", "-j", "4", "-p", "--use-conda"]
+ENTRYPOINT ["snakemake", "-j", "4", "-p"]

@@ -1,0 +1,68 @@
+$schema: "http://json-schema.org/draft-06/schema#"
+
+description: snakemake configuration file
+
+type: object
+
+# possible entries of the config file and which type they should be
+properties:
+  samples:
+    type: string
+    default: config/samples.tsv
+    description: Sample file
+  data_dir:
+    type: string
+    default: data
+    description: Where to download/read raw data from
+  results_dir:
+    type: string
+    default: results
+    description: Main folder for workflow output
+  test:
+    type: boolean
+    default: false
+    description: Whether to only dump a subset of reads from SRA
+  threads:
+    type: integer
+    defalt: 8
+    description: Max threads to use for workflow
+    minimum: 1
+  cutadapt:
+    type: object
+    properties:
+      FWD:
+        type: string
+        default: "CTTGGTCATTTAGAGGAAGTAA"
+        description: Forward primer to cut
+      REV:
+        type: string
+        default: "GCTGCGTTCTTCATCGATGC"
+        description: Reverse primer to cut
+      n:
+        type: integer
+        default: 2
+      minimum_length:
+        type: integer
+        default: 50
+        description: Minimum length for cutadapt
+  dada2:
+    type: object
+    properties:
+      maxN:
+        type: integer
+        default: 0
+      maxEE:
+        type: string
+        default: "c(6,6)"
+      truncLen:
+        type: integer
+        default: 0
+      truncQ:
+        type: integer
+        default: 2
+      minLen:
+        type: integer
+        default: 50
+# entries that have to be in the config file for successful validation
+required:
+  - samples

@@ -1,0 +1,12 @@
+samples:
+  ITS_needle:
+      seqs: "ERR2027937"
+      index: "ERR2027944"
+      mapfile: "info/ITS_needle.txt"
+  ITS_root:
+      seqs: "ERR2027938"
+      index: "ERR2027945"
+      mapfile: "info/ITS_root.txt"
+
+test: False
+spots: 1000
