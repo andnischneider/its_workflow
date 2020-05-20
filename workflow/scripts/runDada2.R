@@ -13,6 +13,7 @@ threads <- args[4]
 
 library(dada2); packageVersion("dada2")
 library(here)
+library(Biostrings)
 # File parsing
 filtpathF <- fw # CHANGE ME to the directory containing your filtered forward fastqs
 filtpathR <- rv # CHANGE ME ...
@@ -67,4 +68,8 @@ track <- cbind(readRDS(here(paste0(out, "out.rds"))), sapply(dadas_f, getN), sap
 colnames(track_n_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
 write.csv(track, here(paste0(out, "/read_counts.csv")), quote = FALSE)
 
+#write out sequences as fasta file for ITSx
+dna <- DNAStringSet(colnames(seqtab.nc))
+names(dna) <- paste0("ASV", seq(ncol(seqtab.nc)))
+writeXStringSet(dna, here(paste0(out, "/seqs.fasta")))
 
