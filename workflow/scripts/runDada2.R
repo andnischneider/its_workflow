@@ -52,11 +52,13 @@ for(sam in sample.names) {
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab <- makeSequenceTable(mergers)
-#dir.create(out, recursive = TRUE)
+seqtab.nc <- removeBimeraDenovo(seqtab, method = "consensus",
+                                multithread = TRUE, verbose = TRUE)
 
 saveRDS(dadas_f, here(paste0(out, "/dada_f.rds")))
 saveRDS(dadas_r, here(paste0(out, "/dada_r.rds")))
 saveRDS(mergers, here(paste0(out, "/mergers.rds")))
 saveRDS(seqtab, here(paste0(out, "/seqtab.rds")))
+saveRDS(seqtab.nc, here(paste0(out, "/seqtab_nc.rds")))
 
 
