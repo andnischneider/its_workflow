@@ -61,4 +61,10 @@ saveRDS(mergers, here(paste0(out, "/mergers.rds")))
 saveRDS(seqtab, here(paste0(out, "/seqtab.rds")))
 saveRDS(seqtab.nc, here(paste0(out, "/seqtab_nc.rds")))
 
+#Track reads through pipeline
+getN <- function(x) sum(getUniques(x))
+track <- cbind(readRDS(here(paste0(out, "out.rds"))), sapply(dadas_f, getN), sapply(dadas_r, getN), rowSums(seqtab), rowSums(seqtab.nc))
+colnames(track_n_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+write.csv(track, here(paste0(out, "/read_counts.csv")), quote = FALSE)
+
 
