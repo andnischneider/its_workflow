@@ -36,7 +36,7 @@ if (any(nchar(getSequences(t(seqtab.nc)))<50)) {
 seqtab.nc2 <- cbind.data.frame(sequence=rownames(seqtab.nc), seqtab.nc)
 seqtab.nc3 <- group_by(seqtab.nc2, sequence) %>% 
   summarise_each(funs(sum)) 
-seqtab.nc4 <- seqtab.nc3[,-c(1,2)]
+seqtab.nc4 <- seqtab.nc3[,-1]
 rownames(seqtab.nc4) <- seqtab.nc3$sequence
 seqtab.nc4 <- data.matrix(t(seqtab.nc4))
 
