@@ -23,6 +23,8 @@ for (i in nlibs) {
 #Conveniently, dada2 has a function to merge any number of sequence tables!
 
 seqtab.nc_all <- mergeSequenceTables(lib_list)
+#Save this 
+saveRDS(seqtab.nc_all, here(paste0(out, "/seqtab.nc_all.rds")))
 
 #Export merged sequences for Swarm
 
