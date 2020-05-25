@@ -19,4 +19,4 @@ out <- filterAndTrim(fwd = snakemake@input$R1, filt = snakemake@output$R1,
               maxEE = snakemake@params$maxEE, rm.phix = snakemake@params$rm_phix,
               minLen = snakemake@params$minLen, multithread = threads)
 
-saveRDS(out, here(paste0(out, "/out.rds")))
+saveRDS(out, snakemake@output$rds)
