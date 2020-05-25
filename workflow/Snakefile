@@ -5,8 +5,7 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f","r"]),
-        expand(opj(config["results_dir"], "dada2", "{y}.rds"), y=["mergers","seqtab"])
+        opj(config["results_dir"], "dada2", "seqs.fasta")
 
 rule fastq_dump:
     output:
@@ -53,7 +52,8 @@ rule prefilter:
                  "{pool_id}_R2.fastq.gz")
     output:
         R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz")
+        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz"),
+        rds = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}.rds")
     log:
         opj(config["results_dir"], "logs", "prefilter", "{pool_id}.log")
     threads: config["threads"]
@@ -113,7 +113,8 @@ rule filterAndTrim:
         R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
     output:
         R1 = opj(config["results_dir"], "intermediate", "filtertrim", "R1", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "filtertrim", "R2", "{pool_id}_R2.fastq.gz")
+        R2 = opj(config["results_dir"], "intermediate", "filtertrim", "R2", "{pool_id}_R2.fastq.gz"),
+        rds = opj(config["results_dir"], "intermediate", "filtertrim", "{pool_id}.rds")
     log:
         opj(config["results_dir"], "logs", "filtertrim", "{pool_id}.log")
     threads: config["threads"]
@@ -138,8 +139,8 @@ rule dada2:
                          "{pool_id}_R2.fastq.gz"),
                      pool_id = pools.keys())
     output:
-        expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f", "r"]),
-        expand(opj(config["results_dir"], "dada2", "{y}.rds"), y=["mergers", "seqtab"])
+        expand(opj(config["results_dir"], "dada2", "{f}.rds"), f=["dada_f", "dada_r", "mergers", "seqtab"]),
+        opj(config["results_dir"], "dada2", "seqs.fasta")
     log:
         opj(config["results_dir"], "logs", "dada2", "dada2.log")
     params:
@@ -157,3 +158,21 @@ rule dada2:
         Rscript --vanilla workflow/scripts/runDada2.R {params.fw_dir} {params.rv_dir} \
             {params.out_dir} {threads} > {log} 2>&1
         """
+
+rule itsx:
+    input:
+        ""
+    output:
+        ""
+    conda:
+        "envs/itsx.yml"
+    shell:
+         """
+         ITSx -i $in/seqs.fasta -o $out/prefix -- cpu 4 --multi_thread T --preserve T --partial --minlen 50
+         """
+
+rule process_itsx:
+    input:
+        ""
+    output:
+        ""
