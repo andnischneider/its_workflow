@@ -2,6 +2,7 @@ data
 *.Rproj
 .Rproj.user
 .Rhistory
+.RData
 results
 Comparison_cache
 Comparison_files
