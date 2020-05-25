@@ -139,7 +139,8 @@ rule dada2:
                          "{pool_id}_R2.fastq.gz"),
                      pool_id = pools.keys())
     output:
-        expand(opj(config["results_dir"], "dada2", "{f}.rds"), f=["dada_f", "dada_r", "mergers", "seqtab"]),
+        expand(opj(config["results_dir"], "dada2", "{f}.rds"),
+               f=["dada_f", "dada_r", "mergers", "seqtab", "seqtab_nc"]),
         opj(config["results_dir"], "dada2", "seqs.fasta")
     log:
         opj(config["results_dir"], "logs", "dada2", "dada2.log")
