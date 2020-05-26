@@ -162,14 +162,17 @@ rule dada2:
 
 rule itsx:
     input:
-        ""
+        opj(config["results_dir"], "dada2", "seqs.fasta")
     output:
-        ""
+        touch(opj(config["results_dir"], "itsx", "done"))
+    params:
+        prefix=lambda wildcards, output: os.path.dirname(output[0])
     conda:
         "envs/itsx.yml"
+    threads: 4
     shell:
          """
-         ITSx -i $in/seqs.fasta -o $out/prefix -- cpu 4 --multi_thread T --preserve T --partial --minlen 50
+         ITSx -i {input} -o {params.prefix} --cpu {threads} --multi_thread T --preserve T --partial --minlen 50
          """
 
 rule process_itsx:
