@@ -23,3 +23,11 @@ dada2:
   truncLen: 0
   truncQ: 2
   minLen: 50
+
+# database
+unite:
+  url: "https://files.plutof.ut.ee/doi/06/A2/06A2C86256EED64085670EB0C54B7115F6DAC8F311C656A9CB33E386CFABA0D0.zip"
+
+# its info
+its:
+  type: "ITS1"
