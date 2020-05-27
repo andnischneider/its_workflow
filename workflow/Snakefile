@@ -5,7 +5,8 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        opj(config["results_dir"], "dada2", "seqs.fasta")
+        opj(config["results_dir"], "itsx",
+            "itsx.{its_type}.fasta".format(its_type=config["its"]["type"]))
 
 rule fastq_dump:
     output:
@@ -164,7 +165,12 @@ rule itsx:
     input:
         opj(config["results_dir"], "dada2", "seqs.fasta")
     output:
-        touch(opj(config["results_dir"], "itsx", "done"))
+        expand(opj(config["results_dir"], "itsx", "itsx.{suffix}"),
+               suffix = ["{}.fasta".format(config["its"]["type"]),
+                         "graph","positions.txt","problematic.txt",
+                         "summary.txt"])
+    log:
+        opj(config["results_dir"], "logs", "itsx", "itsx.log")
     params:
         prefix=lambda wildcards, output: os.path.dirname(output[0])
     conda:
@@ -172,7 +178,8 @@ rule itsx:
     threads: 4
     shell:
          """
-         ITSx -i {input} -o {params.prefix} --cpu {threads} --multi_thread T --preserve T --partial --minlen 50
+         ITSx -i {input} -o {params.prefix}/itsx --cpu {threads} --multi_thread T \
+            --preserve T --partial --minlen 50 > {log} 2>&1
          """
 
 rule process_itsx:
