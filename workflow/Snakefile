@@ -184,6 +184,19 @@ rule itsx:
 
 rule process_itsx:
     input:
-        ""
+        seqtab = opj(config["results_dir"], "dada2", "seqtab_nc.rds"),
+        its_out = opj(config["results_dir"], "itsx",
+                      "itsx.{its_type}.fasta".format(its_type=config["its"]["type"])),
+        its_in = opj(config["results_dir"], "dada2", "seqs.fasta")
     output:
-        ""
+        opj(config["results_dir"], "itsx", "seqtab.nc_itsx_clean.rds")
+    log:
+        opj(config["results_dir"], "logs", "itsx", "process_itsx.log")
+    conda:
+        "envs/dada2.yml"
+    threads: 4
+    shell:
+        """
+        Rscript --vanilla workflow/scripts/ProcessITSx.R {input.its_in} \
+            {input.its_out} {input.seqtab} {output} {threads} > {log} 2>&1
+        """
