@@ -5,4 +5,4 @@ channels:
   - defaults
 dependencies:
   - bioconductor-dada2=1.14
-  - r-here=0.1
+  - r-dplyr

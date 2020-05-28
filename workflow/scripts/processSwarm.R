@@ -12,13 +12,12 @@ outdir <- args[3]
 
 
 library(dada2); packageVersion("dada2")
-library(here)
 library(Biostrings)
 library(dplyr)
 
 #Import sequences and merged seqtab
-seqtab.nc_all <- readRDS(here(paste0(swarm_in, "/seqtab.nc_all.rds")))
-seqs_merged <- readDNAStringSet(here(paste0(swarm_in, "/seqs_sum.fasta")))
+seqtab.nc_all <- readRDS(paste0(swarm_in, "/seqtab.nc_all.rds"))
+seqs_merged <- readDNAStringSet(paste0(swarm_in, "/seqs_sum.fasta"))
 
 #Function to import swarm clusters
 clustfact <- function(file) {
@@ -45,14 +44,14 @@ seqtab_BOTH_sw2 <- seqtab_BOTH_sw
 rownames(seqtab_BOTH_sw2) <- seqtab_BOTH_sw$Cluster
 seqtab_BOTH_sw2 <- data.matrix(seqtab_BOTH_sw2[,-1])
 #This is now ready to proceed and assign taxonomy to all the Swarm clusters
-seeds_swarm <- readDNAStringSet(here(paste0(swarm_res, "/seeds.fasta")))
+seeds_swarm <- readDNAStringSet(paste0(swarm_res, "/seeds.fasta"))
 names(seeds_swarm) <- seqtab_BOTH_sw$Cluster 
 
 seqtab_BOTH_sw3 <- seqtab_BOTH_sw2
 rownames(seqtab_BOTH_sw3) <- as.character(seeds_swarm)
 seqtab_BOTH_sw3 <- t(seqtab_BOTH_sw3)
 #THis can now be used to assign taxonomy on.
-saveRDS(seqtab_BOTH_sw3, here(paste0(outdir, "/seqtab_final.rds")))
+saveRDS(seqtab_BOTH_sw3, paste0(outdir, "/seqtab_final.rds"))
 
 
 

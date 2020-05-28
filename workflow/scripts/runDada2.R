@@ -12,7 +12,6 @@ out <- args[3]
 threads <- args[4]
 
 library(dada2); packageVersion("dada2")
-library(here)
 library(Biostrings)
 # File parsing
 filtpathF <- fw # CHANGE ME to the directory containing your filtered forward fastqs
@@ -56,21 +55,14 @@ seqtab <- makeSequenceTable(mergers)
 seqtab.nc <- removeBimeraDenovo(seqtab, method = "consensus",
                                 multithread = TRUE, verbose = TRUE)
 
-saveRDS(dadas_f, here(paste0(out, "/dada_f.rds")))
-saveRDS(dadas_r, here(paste0(out, "/dada_r.rds")))
-saveRDS(mergers, here(paste0(out, "/mergers.rds")))
-saveRDS(seqtab, here(paste0(out, "/seqtab.rds")))
-saveRDS(seqtab.nc, here(paste0(out, "/seqtab_nc.rds")))
-
-#Track reads through pipeline
-#getN <- function(x) sum(getUniques(x))
-#track <- cbind(readRDS(here(paste0(out, "out.rds"))),
-#               sapply(dadas_f, getN), sapply(dadas_r, getN), rowSums(seqtab), rowSums(seqtab.nc))
-#colnames(track_n_i) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
-#write.csv(track, here(paste0(out, "/read_counts.csv")), quote = FALSE)
+saveRDS(dadas_f, paste0(out, "/dada_f.rds"))
+saveRDS(dadas_r, paste0(out, "/dada_r.rds"))
+saveRDS(mergers, paste0(out, "/mergers.rds"))
+saveRDS(seqtab, paste0(out, "/seqtab.rds"))
+saveRDS(seqtab.nc, paste0(out, "/seqtab_nc.rds"))
 
 #write out sequences as fasta file for ITSx
 dna <- DNAStringSet(colnames(seqtab.nc))
 names(dna) <- paste0("ASV", seq(ncol(seqtab.nc)))
-writeXStringSet(dna, here(paste0(out, "/seqs.fasta")))
+writeXStringSet(dna, paste0(out, "/seqs.fasta"))
 

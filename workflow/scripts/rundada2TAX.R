@@ -1,4 +1,4 @@
-#!/mnt/aspnas/sw/bin/Rscript
+#!/usr/bin/env Rscript
 
 args <- commandArgs(trailingOnly = TRUE)
 
@@ -11,10 +11,9 @@ tax_db <- args[2]
 out <- args[3]
 
 library(dada2)
-library(here)
 
 seq.tab <- readRDS(seq.tab.rds)
 
 taxa <- assignTaxonomy(seq.tab, tax_db, tryRC = TRUE, multithread = TRUE)
 
-saveRDS(taxa, here(paste0(out, "taxa.rds")))
+saveRDS(taxa, paste0(out, "taxa.rds"))

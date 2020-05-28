@@ -11,7 +11,6 @@ args = commandArgs(trailingOnly=TRUE)
 out <- args[1]
 
 library(dada2); packageVersion("dada2")
-library(here)
 
 nlibs <- length(args)-1
 lib_list <- list()
@@ -24,11 +23,11 @@ for (i in nlibs) {
 
 seqtab.nc_all <- mergeSequenceTables(lib_list)
 #Save this 
-saveRDS(seqtab.nc_all, here(paste0(out, "/seqtab.nc_all.rds")))
+saveRDS(seqtab.nc_all, paste0(out, "/seqtab.nc_all.rds"))
 
 #Export merged sequences for Swarm
 
 dna_clean_sum <- DNAStringSet(colnames(seqtab.nc_all))
 names(dna_clean_sum) <- paste0("ASV", 1:length(dna_clean_sum))
 names(dna_clean_sum) <- paste0(names(dna_clean_sum), ";size=", colSums(seqtab.nc_all))
-writeXStringSet(dna_clean_sum, file = here(paste0(out, "/seqs_sum.fasta")))
+writeXStringSet(dna_clean_sum, file = paste0(out, "/seqs_sum.fasta"))
