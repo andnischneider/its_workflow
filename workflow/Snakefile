@@ -10,13 +10,13 @@ rule all:
 
 rule fastq_dump:
     output:
-        R1 = opj(config["data_dir"], "{sample_id}_R1.fastq.gz"),
-        R2 = opj(config["data_dir"], "{sample_id}_R2.fastq.gz")
+        R1 = opj(config["data_dir"], "{dirname}", "{sample_id}_1.fastq.gz"),
+        R2 = opj(config["data_dir"], "{dirname}", "{sample_id}_2.fastq.gz")
     log:
-        opj(config["results_dir"], "logs","sra-tools", "{sample_id}.log")
+        opj(config["results_dir"], "logs", "{dirname}", "sra-tools", "{sample_id}.log")
     params:
         data_dir = lambda wildcards, output: os.path.dirname(output.R1),
-        acc = lambda wildcards: samples[wildcards.sample_id],
+        acc = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["acc"],
         spots = config["spots"]
     conda:
         "envs/sratools.yml"
@@ -28,35 +28,32 @@ rule fastq_dump:
         mv {params.data_dir}/{params.acc}_2.fastq.gz {output.R2}
         """
 
-rule pool:
-    """Collect all samples with same sampleName but different runID"""
+def symlink(input, output):
+    from os.path import abspath
+    from os import symlink
+    src = abspath(input)
+    dst = abspath(output)
+    symlink(src, dst)
+
+rule link:
     input:
-        lambda wildcards: pools[wildcards.pool_id][wildcards.R]
+        lambda wildcards: samples[wildcards.dirname][wildcards.sample_id][wildcards.R]
     output:
-        opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_{R}.fastq.gz"),
-    message:
-        "Pooling {wildcards.pool_id}_R{wildcards.R}.fastq.gz"
+        opj(config["results_dir"], "{dirname}", "{sample_id}_R{R}.fastq.gz")
     run:
-        if len(input) == 1:
-            src = os.path.abspath(input[0])
-            dst = os.path.abspath(output[0])
-            shell("ln -s {src} {dst}")
-        else:
-            shell("gunzip -c {input} | gzip -c > {output}")
+        symlink(input, output)
 
 rule prefilter:
     """Runs the ITS prefiltering step for ambiguous bases"""
     input:
-        R1 = opj(config["results_dir"], "intermediate", "pooled",
-                 "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "pooled",
-                 "{pool_id}_R2.fastq.gz")
+        R1 = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["R1"],
+        R2 = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["R2"]
     output:
-        R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz"),
-        rds = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}.rds")
+        R1 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R2.fastq.gz"),
+        rds = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}.rds")
     log:
-        opj(config["results_dir"], "logs", "prefilter", "{pool_id}.log")
+        opj(config["results_dir"], "logs", "{dirname}", "prefilter", "{sample_id}.log")
     threads: config["threads"]
     conda:
         "envs/dada2.yml"
