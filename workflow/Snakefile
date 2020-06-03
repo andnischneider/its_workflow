@@ -78,15 +78,15 @@ rule generate_revcomp:
 rule cut_ITS_primers:
     """Removes primers from ITS data using cutadapt"""
     input:
-        R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz"),
+        R1 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R2.fastq.gz"),
         fwd_rc = opj(config["results_dir"], "intermediate", "fwd_rc"),
         rev_rc = opj(config["results_dir"], "intermediate", "rev_rc")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R2.fastq.gz")
     log:
-        opj(config["results_dir"], "logs", "cutadapt", "{pool_id}.log")
+        opj(config["results_dir"], "logs", "{dirname}", "cutadapt", "{sample_id}.log")
     params:
         FWD = config["cutadapt"]["FWD"],
         REV = config["cutadapt"]["REV"],
