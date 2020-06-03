@@ -107,14 +107,14 @@ rule cut_ITS_primers:
 
 rule filterAndTrim:
     input:
-        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R2.fastq.gz")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "filtertrim", "R1", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "filtertrim", "R2", "{pool_id}_R2.fastq.gz"),
-        rds = opj(config["results_dir"], "intermediate", "filtertrim", "{pool_id}.rds")
+        R1 = opj(config["results_dir"], "{dirname}", "filtertrim", "R1", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "filtertrim", "R2", "{sample_id}_R2.fastq.gz"),
+        rds = opj(config["results_dir"], "{dirname}", "filtertrim", "{sample_id}.rds")
     log:
-        opj(config["results_dir"], "logs", "filtertrim", "{pool_id}.log")
+        opj(config["results_dir"], "logs", "{dirname}", "filtertrim", "{sample_id}.log")
     threads: config["threads"]
     conda:
         "envs/dada2.yml"
@@ -127,25 +127,31 @@ rule filterAndTrim:
     script:
         "scripts/filter.R"
 
+
+def get_dada2_input(wildcards):
+    files = expand(opj(config["results_dir"], wildcards.dirname, "filtertrim",
+                       "R1", "{sample_id}_R1.fastq.gz"),
+                    sample_id=samples[wildcards.dirname].keys())
+    files += expand(opj(config["results_dir"], wildcards.dirname, "filtertrim",
+                        "R2", "{sample_id}_R2.fastq.gz"),
+                    sample_id=samples[wildcards.dirname].keys())
+    return files
+
+
 rule dada2:
     """Calls DADA2 Rscript with trimmed input"""
     input:
-        expand(opj(config["results_dir"], "intermediate", "filtertrim", "R1",
-                         "{pool_id}_R1.fastq.gz"),
-                     pool_id = pools.keys()),
-        expand(opj(config["results_dir"], "intermediate", "filtertrim", "R2",
-                         "{pool_id}_R2.fastq.gz"),
-                     pool_id = pools.keys())
+        get_dada2_input
     output:
-        expand(opj(config["results_dir"], "dada2", "{f}.rds"),
+        expand(opj(config["results_dir"], "{{dirname}}", "dada2", "{f}.rds"),
                f=["dada_f", "dada_r", "mergers", "seqtab", "seqtab_nc"]),
-        opj(config["results_dir"], "dada2", "seqs.fasta")
+        opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     log:
-        opj(config["results_dir"], "logs", "dada2", "dada2.log")
+        opj(config["results_dir"], "logs", "{dirname}", "dada2", "dada2.log")
     params:
-        fw_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R1"),
-        rv_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R2"),
-        out_dir = opj(config["results_dir"], "dada2")
+        fw_dir = opj(config["results_dir"], "{dirname}", "filtertrim", "R1"),
+        rv_dir = opj(config["results_dir"], "{dirname}", "filtertrim", "R2"),
+        out_dir = opj(config["results_dir"], "{dirname}", "dada2")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*48,
         mem_mb = 64000
