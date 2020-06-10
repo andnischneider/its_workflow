@@ -11,6 +11,9 @@ rule all:
 
 
 rule fastq_dump:
+    """
+    Downloads fastq files from a remote sequence read archive
+    """
     output:
         R1 = opj(config["data_dir"], "{dirname}", "{sample_id}_1.fastq.gz"),
         R2 = opj(config["data_dir"], "{dirname}", "{sample_id}_2.fastq.gz")
@@ -31,6 +34,12 @@ rule fastq_dump:
         """
 
 def symlink(input, output):
+    """
+    Generates symlinks with absolute paths as the start point of the workflow
+    :param input: Input fastq file
+    :param output: Symlinked fastq file
+    :return:
+    """
     from os.path import abspath
     from os import symlink
     src = abspath(input)
@@ -46,7 +55,9 @@ rule link:
         symlink(input, output)
 
 rule prefilter:
-    """Runs the ITS prefiltering step for ambiguous bases"""
+    """
+    Runs the ITS prefiltering step for ambiguous bases
+    """
     input:
         R1 = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["R1"],
         R2 = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["R2"]
@@ -63,6 +74,9 @@ rule prefilter:
         "scripts/filter.R"
 
 rule generate_revcomp:
+    """
+    Generates a reverse complement of the cutadapt sequences
+    """
     output:
         fwd_rc = temp(opj(config["results_dir"], "intermediate", "fwd_rc")),
         rev_rc = temp(opj(config["results_dir"], "intermediate", "rev_rc"))
@@ -78,7 +92,9 @@ rule generate_revcomp:
         """
 
 rule cut_ITS_primers:
-    """Removes primers from ITS data using cutadapt"""
+    """
+    Removes primers from ITS data using cutadapt
+    """
     input:
         R1 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R1.fastq.gz"),
         R2 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R2.fastq.gz"),
@@ -108,6 +124,9 @@ rule cut_ITS_primers:
         """
 
 rule filterAndTrim:
+    """
+    Runs read filtering and trimming of input reads 
+    """
     input:
         R1 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R1.fastq.gz"),
         R2 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R2.fastq.gz")
@@ -131,6 +150,12 @@ rule filterAndTrim:
 
 
 def get_dada2_input(wildcards):
+    """
+    Collects all input files for dada2 for each input directory
+
+    :param wildcards: snakemake wildcards
+    :return:
+    """
     files = expand(opj(config["results_dir"], wildcards.dirname, "filtertrim",
                        "R1", "{sample_id}_R1.fastq.gz"),
                     sample_id=samples[wildcards.dirname].keys())
@@ -141,7 +166,9 @@ def get_dada2_input(wildcards):
 
 
 rule dada2:
-    """Calls DADA2 Rscript with trimmed input"""
+    """
+    Runs DADA2 with trimmed input
+    """
     input:
         get_dada2_input
     output:
@@ -167,6 +194,9 @@ rule dada2:
         """
 
 rule itsx:
+    """
+    Runs ITSx to extract ITS sequences from the ASV sequences
+    """
     input:
         opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     output:
@@ -188,15 +218,18 @@ rule itsx:
          """
 
 rule process_itsx:
+    """
+    Run post-processing on extracted ITS sequences
+    """
     input:
-        seqtab = opj(config["results_dir"], "dada2", "seqtab_nc.rds"),
-        its_out = opj(config["results_dir"], "itsx",
+        seqtab = opj(config["results_dir"], "{dirname}", "dada2", "seqtab_nc.rds"),
+        its_out = opj(config["results_dir"], "{dirname}", "itsx",
                       "itsx.{its_type}.fasta".format(its_type=config["its"]["type"])),
-        its_in = opj(config["results_dir"], "dada2", "seqs.fasta")
+        its_in = opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     output:
-        opj(config["results_dir"], "itsx", "seqtab.nc_itsx_clean.rds")
+        opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds")
     log:
-        opj(config["results_dir"], "logs", "itsx", "process_itsx.log")
+        opj(config["results_dir"], "logs", "{dirname}", "itsx", "process_itsx.log")
     conda:
         "envs/dada2.yml"
     threads: 4
