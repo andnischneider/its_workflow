@@ -5,7 +5,7 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        opj(config["results_dir"], "swarm", "seqtab_final.rds")
+        opj(config["results_dir"], "taxa.rds")
 
 
 rule fastq_dump:
@@ -331,5 +331,6 @@ rule dada2_tax:
     threads: 4
     shell:
         """
-        Rscript --vanilla workflow/scripts/rundada2TAX.R {input[0]} {input[1]} {output[0]} {threads}
+        Rscript --vanilla workflow/scripts/rundada2TAX.R {input[0]} {input[1]} \
+            {output[0]} {threads} > {log} 2>&1
         """
