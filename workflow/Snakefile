@@ -5,9 +5,7 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        expand(opj(config["results_dir"], "{dirname}", "itsx",
-            "itsx.{its_type}.fasta".format(its_type=config["its"]["type"])),
-               dirname = dirnames)
+        opj(config["results_dir"], "swarm", "seqtab_final.rds")
 
 
 rule fastq_dump:
@@ -254,11 +252,11 @@ rule merge_libraries:
     conda:
         "envs/dada2.yml"
     params:
-        dirnames = " ".join([opj(config["results_dir"], dirname) for dirname in dirnames]),
+        dirnames = " ".join([opj(config["results_dir"], dirname, "itsx") for dirname in dirnames]),
         output_dir = lambda wildcards, output: os.path.dirname(output[0])
     shell:
         """
-        Rscript --vanilla scripts/MergeLibraries.R {params.output_dir} \
+        Rscript --vanilla workflow/scripts/MergeLibraries.R {params.output_dir} \
             {params.dirnames} > {log} 2>&1 
         """
 
