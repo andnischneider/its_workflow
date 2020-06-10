@@ -1,5 +1,13 @@
 include: "rules/common.smk"
 
+localrules:
+    all,
+    fastq_dump,
+    link,
+    generate_revcomp,
+    merge_libraries,
+    download_unite
+
 rule all:
     """
     Collect the main outputs of the workflow
@@ -65,7 +73,9 @@ rule prefilter:
         rds = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}.rds")
     log:
         opj(config["results_dir"], "logs", "{dirname}", "prefilter", "{sample_id}.log")
-    threads: config["threads"]
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "envs/dada2.yml"
     script:
@@ -108,9 +118,11 @@ rule cut_ITS_primers:
         REV = config["cutadapt"]["REV"],
         n = config["cutadapt"]["n"],
         min_len = config["cutadapt"]["minimum_length"]
-    threads: config["threads"]
+    threads: 4
     conda:
         "envs/cutadapt.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     shell:
         """
         A=$(cat {input.fwd_rc})
@@ -134,7 +146,9 @@ rule filterAndTrim:
         rds = opj(config["results_dir"], "{dirname}", "filtertrim", "{sample_id}.rds")
     log:
         opj(config["results_dir"], "logs", "{dirname}", "filtertrim", "{sample_id}.log")
-    threads: config["threads"]
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "envs/dada2.yml"
     params:
@@ -180,7 +194,7 @@ rule dada2:
         rv_dir = opj(config["results_dir"], "{dirname}", "filtertrim", "R2"),
         out_dir = opj(config["results_dir"], "{dirname}", "dada2")
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48,
+        runtime = lambda wildcards, attempt: attempt**2*60*24,
         mem_mb = 64000
     threads: 8
     conda:
@@ -209,6 +223,8 @@ rule itsx:
     conda:
         "envs/itsx.yml"
     threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     shell:
          """
          ITSx -i {input} -o {params.prefix}/itsx --cpu {threads} --multi_thread T \
@@ -231,6 +247,8 @@ rule process_itsx:
     conda:
         "envs/dada2.yml"
     threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     shell:
         """
         Rscript --vanilla workflow/scripts/ProcessITSx.R {input.its_in} \
@@ -272,6 +290,8 @@ rule swarm:
     log:
         opj(config["results_dir"], "logs", "swarm.log")
     threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "envs/swarm.yml"
     shell:
@@ -292,6 +312,8 @@ rule process_swarm:
         opj(config["results_dir"], "logs", "process_swarm.log")
     conda:
         "envs/dada2.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     params:
         swarm_in = lambda wildcards, input: os.path.dirname(input.seqtab),
         swarm_res = lambda wildcards, input: os.path.dirname(input.txt)
@@ -329,6 +351,8 @@ rule dada2_tax:
     conda:
         "envs/dada2.yml"
     threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
         Rscript --vanilla workflow/scripts/rundada2TAX.R {input[0]} {input[1]} \
