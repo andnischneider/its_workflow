@@ -297,7 +297,7 @@ rule process_swarm:
         swarm_res = lambda wildcards, input: os.path.dirname(input.txt)
     shell:
         """
-        Rscript --vanilla scripts/processSwarm.R {params.swarm_res} \
+        Rscript --vanilla workflow/scripts/processSwarm.R {params.swarm_res} \
             {params.swarm_in} {params.swarm_res} > {log} 2>&1
         """
 
@@ -316,4 +316,20 @@ rule download_unite:
         cat {params.dir}/sh*.fasta > {params.dir}/unite
         rm -rf {params.dir}/developer {params.dir}/unite.zip {params.dir}/*.fasta
         mv {params.dir}/unite {params.dir}/unite.fasta
+        """
+
+rule dada2_tax:
+    input:
+        opj(config["results_dir"], "swarm", "seqtab_final.rds"),
+        opj("resources", "unite", "unite.fasta")
+    output:
+        opj(config["results_dir"], "taxa.rds")
+    log:
+        opj(config["results_dir"], "logs", "dada2tax.log")
+    conda:
+        "envs/dada2.yml"
+    threads: 4
+    shell:
+        """
+        Rscript --vanilla workflow/scripts/rundada2TAX.R {input[0]} {input[1]} {output[0]} {threads}
         """
