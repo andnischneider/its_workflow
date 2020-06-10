@@ -6,3 +6,5 @@ channels:
 dependencies:
   - bioconductor-dada2=1.14
   - r-dplyr
+  - r-readr
+  - r-stringr
