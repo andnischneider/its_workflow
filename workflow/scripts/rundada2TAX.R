@@ -9,11 +9,18 @@ if (length(args) != 3) {
 seq.tab.rds <- args[1]
 tax_db <- args[2]
 out <- args[3]
+threads <- args[4]
 
 library(dada2)
+library(RcppParallel)
+
+if (threads > 1) {
+  setThreadOptions(numThreads = as.integer(threads))
+  multithreading <- TRUE
+}
 
 seq.tab <- readRDS(seq.tab.rds)
 
-taxa <- assignTaxonomy(seq.tab, tax_db, tryRC = TRUE, multithread = TRUE)
+taxa <- assignTaxonomy(seq.tab, tax_db, tryRC = TRUE, multithread = multithreading)
 
 saveRDS(taxa, paste0(out, "taxa.rds"))
