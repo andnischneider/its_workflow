@@ -14,6 +14,9 @@ outdir <- args[3]
 library(dada2); packageVersion("dada2")
 library(Biostrings)
 library(dplyr)
+library(readr)
+library(stringr)
+library(reshape2)
 
 #Import sequences and merged seqtab
 seqtab.nc_all <- readRDS(paste0(swarm_in, "/seqtab.nc_all.rds"))
