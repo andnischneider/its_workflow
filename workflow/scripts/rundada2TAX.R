@@ -14,6 +14,8 @@ threads <- args[4]
 library(dada2)
 library(RcppParallel)
 
+multithreading <- FALSE
+
 if (threads > 1) {
   setThreadOptions(numThreads = as.integer(threads))
   multithreading <- TRUE
