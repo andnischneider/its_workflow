@@ -238,3 +238,26 @@ rule process_itsx:
         Rscript --vanilla workflow/scripts/ProcessITSx.R {input.its_in} \
             {input.its_out} {input.seqtab} {output} {threads} > {log} 2>&1
         """
+
+rule merge_libraries:
+    """
+    Merges the sequence tables from ITSx
+    """
+    input:
+        expand(opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds"),
+               dirname = dirnames)
+    output:
+        opj(config["results_dir"], "merged", "seqtab.nc_all.rds"),
+        opj(config["results_dir"], "merged", "seqs_sum.fasta")
+    log:
+        opj(config["results_dir"], "logs", "merge_libraries.log")
+    conda:
+        "envs/dada2.yml"
+    params:
+        dirnames = " ".join([opj(config["results_dir"], dirname) for dirname in dirnames]),
+        output_dir = lambda wildcards, output: os.path.dirname(output[0])
+    shell:
+        """
+        Rscript --vanilla scripts/MergeLibraries.R {params.output_dir} \
+            {params.dirnames} > {log} 2>&1 
+        """
