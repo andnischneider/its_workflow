@@ -32,14 +32,18 @@ def get_samples(df, data_dir, results_dir):
             dirname = r.dirname
         except AttributeError:
             dirname = ""
-        if dirname not in sample_dict.keys():
-            sample_dict[dirname] = {sample_id: {}}
-        else:
-            sample_dict[dirname][sample_id] = {}
         dirnames.append(dirname)
         # Set start location for sample
         R1 = opj(data_dir, dirname, "{}_R1.fastq.gz".format(sample_id))
         R2 = opj(data_dir, dirname, "{}_R2.fastq.gz".format(sample_id))
+        # Check for duplicate sample names
+        nums = df.loc[df["sample"] == sample_id].shape[0]
+        if nums > 1:
+            sample_id = "{}-{}".format(sample_id, i)
+        if dirname not in sample_dict.keys():
+            sample_dict[dirname] = {sample_id: {}}
+        else:
+            sample_dict[dirname][sample_id] = {}
         sample_dict[dirname][sample_id]["R1"] = R1
         sample_dict[dirname][sample_id]["R2"] = R2
         # See if the sample has an SRA id that can be used to download it
