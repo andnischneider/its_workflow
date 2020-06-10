@@ -43,7 +43,6 @@ def get_samples(df, data_dir, results_dir):
         sample_dict[dirname][sample_id]["R1"] = R1
         sample_dict[dirname][sample_id]["R2"] = R2
         # See if the sample has an SRA id that can be used to download it
-        print(R1)
         if "sra_id" in df.columns:
             sample_dict[dirname][sample_id]["acc"] = r.sra_id
         # If not, check that the starting file exists under data dir
