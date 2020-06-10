@@ -48,17 +48,17 @@ rule link:
     input:
         lambda wildcards: samples[wildcards.dirname][wildcards.sample_id][wildcards.R]
     output:
-        opj(config["results_dir"], "{dirname}", "{sample_id}_R{R}.fastq.gz")
+        temp(opj(config["results_dir"], "{dirname}", "{sample_id}_{R}.fastq.gz"))
     run:
-        symlink(input, output)
+        symlink(input[0], output[0])
 
 rule prefilter:
     """
     Runs the ITS prefiltering step for ambiguous bases
     """
     input:
-        R1 = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["R1"],
-        R2 = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["R2"]
+        R1 = opj(config["results_dir"], "{dirname}", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "{sample_id}_R2.fastq.gz"),
     output:
         R1 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R1.fastq.gz"),
         R2 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R2.fastq.gz"),
