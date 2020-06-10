@@ -5,8 +5,10 @@ rule all:
     Collect the main outputs of the workflow
     """
     input:
-        opj(config["results_dir"], "itsx",
-            "itsx.{its_type}.fasta".format(its_type=config["its"]["type"]))
+        expand(opj(config["results_dir"], "{dirname}", "itsx",
+            "itsx.{its_type}.fasta".format(its_type=config["its"]["type"])),
+               dirname = dirnames)
+
 
 rule fastq_dump:
     output:
@@ -166,14 +168,14 @@ rule dada2:
 
 rule itsx:
     input:
-        opj(config["results_dir"], "dada2", "seqs.fasta")
+        opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     output:
-        expand(opj(config["results_dir"], "itsx", "itsx.{suffix}"),
+        expand(opj(config["results_dir"], "{{dirname}}", "itsx", "itsx.{suffix}"),
                suffix = ["{}.fasta".format(config["its"]["type"]),
                          "graph","positions.txt","problematic.txt",
                          "summary.txt"])
     log:
-        opj(config["results_dir"], "logs", "itsx", "itsx.log")
+        opj(config["results_dir"], "logs", "{dirname}", "itsx", "itsx.log")
     params:
         prefix=lambda wildcards, output: os.path.dirname(output[0])
     conda:
