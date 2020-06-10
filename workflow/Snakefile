@@ -261,3 +261,23 @@ rule merge_libraries:
         Rscript --vanilla scripts/MergeLibraries.R {params.output_dir} \
             {params.dirnames} > {log} 2>&1 
         """
+
+rule swarm:
+    """
+    Cluster sequences using SWARM
+    """
+    input:
+        opj(config["results_dir"], "merged", "seqs_sum.fasta")
+    output:
+        txt=opj(config["results_dir"], "swarm", "results.txt"),
+        seeds=opj(config["results_dir"], "swarm", "seeds.fasta")
+    log:
+        opj(config["results_dir"], "logs", "swarm.log")
+    threads: 4
+    conda:
+        "envs/swarm.yml"
+    shell:
+        """
+        swarm -t {threads} -d 3 -z --output-file {output.txt} \
+            --seeds {output.seeds} {input} > {log} 2>&1
+        """
