@@ -2,8 +2,8 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 3) {
-  stop('usage: rundada2TAX.R <seqtab.rds> <taxonomy database> <output dir>')
+if (length(args) != 4) {
+  stop('usage: rundada2TAX.R <seqtab.rds> <taxonomy database> <output dir> <threads>')
 }
 
 seq.tab.rds <- args[1]
@@ -25,4 +25,4 @@ seq.tab <- readRDS(seq.tab.rds)
 
 taxa <- assignTaxonomy(seq.tab, tax_db, tryRC = TRUE, multithread = multithreading)
 
-saveRDS(taxa, paste0(out, "taxa.rds"))
+saveRDS(taxa, out)
