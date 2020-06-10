@@ -300,3 +300,20 @@ rule process_swarm:
         Rscript --vanilla scripts/processSwarm.R {params.swarm_res} \
             {params.swarm_in} {params.swarm_res} > {log} 2>&1
         """
+
+rule download_unite:
+    output:
+        opj("resources", "unite", "unite.fasta")
+    log:
+        opj("resources", "unite", "log")
+    params:
+        unite_url = config["unite"]["url"],
+        dir = lambda wildcards, output: os.path.dirname(output[0])
+    shell:
+        """
+        curl -o {params.dir}/unite.zip -L {params.unite_url} > {log} 2>&1
+        unzip -d {params.dir} {params.dir}/unite.zip > {log} 2>&1
+        cat {params.dir}/sh*.fasta > {params.dir}/unite
+        rm -rf {params.dir}/developer {params.dir}/unite.zip {params.dir}/*.fasta
+        mv {params.dir}/unite {params.dir}/unite.fasta
+        """
