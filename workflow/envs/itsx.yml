@@ -1,0 +1,7 @@
+name: itsx
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - itsx=1.1b

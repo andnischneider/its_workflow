@@ -1,4 +1,4 @@
-name: amplicon_wf
+name: its_wf
 channels:
   - bioconda
   - conda-forge

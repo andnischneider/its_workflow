@@ -7,7 +7,7 @@ rule all:
                sample=config["samples"].keys(),
                indir=["DeML", "DeML_pooled"])
 
-rule download_data:
+rule fastq_dump:
     output:
         R1 = "data/{dir_type}/{sample}_1.fastq.gz",
         R2 = "data/{dir_type}/{sample}_2.fastq.gz"
@@ -25,6 +25,23 @@ rule download_data:
         seqtk rename {params.dir}/{params.acc}_1.fastq.gz {params.prefix} | gzip -c > {output.R1}
         seqtk rename {params.dir}/{params.acc}_2.fastq.gz {params.prefix} | gzip -c > {output.R2}
         rm {params.dir}/{params.acc}_*.fastq.gz
+        """
+
+rule download_data:
+    output:
+        "data/{dir_type}/{sample}_{R}.fastq.gz"
+    log:
+        "logs/{sample}.{dir_type}_{R}.curl.log"
+    params:
+        acc = lambda wildcards: config["samples"][wildcards.sample][wildcards.dir_type],
+        url = lambda wildcards: config["ftp"][wildcards.sample][wildcards.dir_type][wildcards.R],
+        dir = lambda wildcards, output: os.path.dirname(output[0]),
+        prefix = "{sample}."
+    shell:
+        """
+        curl -L -o {params.dir}/{params.acc}_{wildcards.R}.fastq.gz {params.url} > {log} 2>&1
+        seqtk rename {params.dir}/{params.acc}_{wildcards.R}.fastq.gz {params.prefix} | gzip -c > {output}
+        rm {params.dir}/{params.acc}_{wildcards.R}.fastq.gz
         """
 
 rule deML:

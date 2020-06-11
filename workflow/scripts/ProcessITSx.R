@@ -3,7 +3,7 @@
 args = commandArgs(trailingOnly=TRUE)
 
 if (length(args) != 5) {
-  stop('usage: processITSx.R <itsx_input> <itsx_output> <seqtab.nc> <Output dir> <threads>')
+  stop('usage: processITSx.R <itsx_input> <itsx_output> <seqtab.nc> <outfile> <threads>')
 }
 
 itsx_in <- args[1]
@@ -13,8 +13,8 @@ out <- args[4]
 threads <- args[5]
 
 library(dada2); packageVersion("dada2")
-library(here)
 library(dplyr)
+library(Biostrings)
 
 dna <- readDNAStringSet(itsx_in)
 dna_itsx <- as.character(readDNAStringSet(itsx_out))
@@ -40,4 +40,4 @@ seqtab.nc4 <- seqtab.nc3[,-1]
 rownames(seqtab.nc4) <- seqtab.nc3$sequence
 seqtab.nc4 <- data.matrix(t(seqtab.nc4))
 
-saveRDS(seqtab.nc4, here(paste0(out, "/seqtab.nc_itsx_clean.rds")))
+saveRDS(seqtab.nc4, out)
