@@ -155,7 +155,8 @@ rule filterAndTrim:
         maxN = config["dada2"]["maxN"],
         truncQ = config["dada2"]["truncQ"],
         truncLen = config["dada2"]["truncLen"],
-        maxEE = config["dada2"]["maxEE"],
+        maxEE_R1 = config["dada2"]["maxEE_R1"],
+        maxEE_R2 = config["dada2"]["maxEE_R2"],
         minLen = config["dada2"]["minLen"]
     script:
         "scripts/filter.R"
