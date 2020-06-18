@@ -242,7 +242,8 @@ rule process_itsx:
                       "itsx.{its_type}.full_and_partial.fasta".format(its_type=config["its"]["type"])),
         its_in = opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     output:
-        opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds")
+        seqtab=opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds"),
+        mock=touch(opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.mock.rds"))
     log:
         opj(config["results_dir"], "logs", "{dirname}", "itsx", "process_itsx.log")
     conda:
@@ -250,11 +251,10 @@ rule process_itsx:
     threads: 4
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
-    shell:
-        """
-        Rscript --vanilla workflow/scripts/ProcessITSx.R {input.its_in} \
-            {input.its_out} {input.seqtab} {output} {threads} > {log} 2>&1
-        """
+    params:
+        mock = ",".join(mocks)
+    script:
+        "scripts/ProcessITSx.R"
 
 rule merge_libraries:
     """
