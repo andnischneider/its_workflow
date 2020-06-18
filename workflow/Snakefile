@@ -214,7 +214,7 @@ rule itsx:
         opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     output:
         expand(opj(config["results_dir"], "{{dirname}}", "itsx", "itsx.{suffix}"),
-               suffix = ["{}.fasta".format(config["its"]["type"]),
+               suffix = ["{}.full_and_partial.fasta".format(config["its"]["type"]),
                          "graph","positions.txt","problematic.txt",
                          "summary.txt"])
     log:
