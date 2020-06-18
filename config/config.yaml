@@ -29,3 +29,7 @@ unite:
 # its info
 its:
   type: "ITS1"
+
+# mock sample names
+mock:
+  - "its.mock.none.t5.0"
