@@ -2,15 +2,15 @@
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args) != 5) {
-  stop('usage: processITSx.R <itsx_input> <itsx_output> <seqtab.nc> <outfile> <threads>')
-}
+itsx_in <- snakemake@input$its_in
+itsx_out <- snakemake@input$its_out
+sq.nc <- snakemake@input$seqtab
+out <- snakemake@output$seqtab
+out_mock <- snakemake@output$mock
+threads <- snakemake@threads
+mock <- snakemake@params$mock
 
-itsx_in <- args[1]
-itsx_out <- args[2]
-sq.nc <- args[3]
-out <- args[4]
-threads <- args[5]
+mock_samples <- strsplit(mock, ",")[[1]]
 
 library(dada2); packageVersion("dada2")
 library(dplyr)
@@ -35,8 +35,18 @@ if (any(nchar(getSequences(t(seqtab.nc)))<50)) {
 #At this point we can summarise all identical sequences 
 seqtab.nc2 <- cbind.data.frame(sequence=rownames(seqtab.nc), seqtab.nc)
 seqtab.nc3 <- group_by(seqtab.nc2, sequence) %>% 
-  summarise_each(funs(sum)) 
-seqtab.nc4 <- seqtab.nc3[,-1]
+  summarise_each(funs(sum))
+
+if (length(mock_samples) > 0) {
+  mock <- seqtab.nc3 %>% select(all_of(mock_samples))
+  seqtab.nc4 <- seqtab.nc3 %>% select(!any_of(mock_samples))
+  names(mock) <- rownames(seqtab.nc3)
+  saveRDS(mock, out_mock)
+}
+else {
+  seqtab.nc4 <- seqtab.nc3
+}
+
 rownames(seqtab.nc4) <- seqtab.nc3$sequence
 seqtab.nc4 <- data.matrix(t(seqtab.nc4))
 
