@@ -16,6 +16,6 @@ if config["test"]:
 
 sample_df = pd.read_csv(config["samples"], sep="\t")
 validate(sample_df, schema="../schemas/samples.schema.yaml")
-samples, dirnames = get_samples(sample_df,
+samples, dirnames, mocks = get_samples(sample_df,
                                 config["data_dir"],
-                                config["results_dir"])
+                                config["mock"])
