@@ -13,7 +13,7 @@ R2: {}
             """.format(sample_id, R1, R2))
 
 
-def get_samples(df, data_dir, results_dir):
+def get_samples(df, data_dir, mock_samples):
     """
     Parses the sample list and generates a sample dictionary and a pool
     dictionary with information on how the workflow should handle input.
@@ -24,9 +24,13 @@ def get_samples(df, data_dir, results_dir):
     """
     sample_dict = {}
     dirnames = []
+    mocks = []
     for i in df.index:
+        mock = False
         r = df.loc[i]
         sample_id = r["sample"]
+        if sample_id in mock_samples:
+            mock = True
         # Check if there's a dirname for sample
         try:
             dirname = r.dirname
@@ -44,6 +48,8 @@ def get_samples(df, data_dir, results_dir):
             sample_dict[dirname] = {sample_id: {}}
         else:
             sample_dict[dirname][sample_id] = {}
+        if mock:
+            mocks.append(sample_id)
         sample_dict[dirname][sample_id]["R1"] = R1
         sample_dict[dirname][sample_id]["R2"] = R2
         # See if the sample has an SRA id that can be used to download it
@@ -53,4 +59,4 @@ def get_samples(df, data_dir, results_dir):
         else:
             if not exists(R1) or not exists(R2):
                 exit(sample_id, R1, R2)
-    return sample_dict, list(set(dirnames))
+    return sample_dict, list(set(dirnames)), mocks
