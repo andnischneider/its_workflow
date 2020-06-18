@@ -229,7 +229,7 @@ rule itsx:
     shell:
          """
          ITSx -i {input} -o {params.prefix}/itsx --cpu {threads} --multi_thread T \
-            --preserve T --partial --minlen 50 > {log} 2>&1
+            --preserve T --partial 50 --minlen 50 > {log} 2>&1
          """
 
 rule process_itsx:
@@ -239,7 +239,7 @@ rule process_itsx:
     input:
         seqtab = opj(config["results_dir"], "{dirname}", "dada2", "seqtab_nc.rds"),
         its_out = opj(config["results_dir"], "{dirname}", "itsx",
-                      "itsx.{its_type}.fasta".format(its_type=config["its"]["type"])),
+                      "itsx.{its_type}.full_and_partial.fasta".format(its_type=config["its"]["type"])),
         its_in = opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     output:
         opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds")
