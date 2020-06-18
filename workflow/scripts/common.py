@@ -25,6 +25,8 @@ def get_samples(df, data_dir, mock_samples):
     sample_dict = {}
     dirnames = []
     mocks = []
+    if mock_samples == None:
+        mock_samples = []
     for i in df.index:
         mock = False
         r = df.loc[i]
