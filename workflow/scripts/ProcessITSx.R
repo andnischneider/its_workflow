@@ -46,7 +46,7 @@ if (length(intersect(colnames(seqtab.nc3), mock_samples)) > 0) {
   seqtab.nc4 <- seqtab.nc3 %>% select(!any_of(mock_samples))
   saveRDS(mock, out_mock)
 } else {
-  seqtab.nc4 <- seqtab.nc3
+  seqtab.nc4 <- seqtab.nc3[,colnames(seqtab.nc3)!="sequence"]
 }
 
 rownames(seqtab.nc4) <- seqtab.nc3$sequence
