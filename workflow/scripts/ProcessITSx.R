@@ -12,8 +12,6 @@ mock <- snakemake@params$mock
 
 mock_samples <- strsplit(mock, ",")[[1]]
 
-print(mock_samples)
-
 library(dada2); packageVersion("dada2")
 library(dplyr)
 library(Biostrings)
@@ -40,10 +38,9 @@ seqtab.nc3 <- group_by(seqtab.nc2, sequence) %>%
   summarise_each(funs(sum))
 
 if (length(intersect(colnames(seqtab.nc3), mock_samples)) > 0) {
-  mock_samples <- append(c("sequence"), intersect(colnames(seqtab.nc3), mock_samples))
-  mock <- seqtab.nc3 %>% select(all_of(mock_samples))
-  mock_samples <- mock_samples[2:length(mock_samples)]
-  seqtab.nc4 <- seqtab.nc3 %>% select(!any_of(mock_samples))
+  mock_cols <- append(c("sequence"), intersect(colnames(seqtab.nc3), mock_samples))
+  mock <- seqtab.nc3 %>% select(all_of(mock_cols))
+  seqtab.nc4 <- seqtab.nc3 %>% select(!any_of(mock_cols))
   saveRDS(mock, out_mock)
 } else {
   seqtab.nc4 <- seqtab.nc3[,colnames(seqtab.nc3)!="sequence"]
