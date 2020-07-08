@@ -27,7 +27,7 @@ saveRDS(seqtab.nc_all, paste0(out, "/seqtab.nc_all.rds"))
 
 #Export merged sequences for Swarm
 
-dna_clean_sum <- DNAStringSet(colnames(seqtab.nc_all))
+dna_clean_sum <- DNAStringSet(colnames(seqtab.nc_all[,colSums(seqtab.nc_all)>0]))
 names(dna_clean_sum) <- paste0("ASV", 1:length(dna_clean_sum))
-names(dna_clean_sum) <- paste0(names(dna_clean_sum), ";size=", colSums(seqtab.nc_all))
+names(dna_clean_sum) <- paste0(names(dna_clean_sum), ";size=", colSums(seqtab.nc_all[,colSums(seqtab.nc_all)>0]))
 writeXStringSet(dna_clean_sum, file = paste0(out, "/seqs_sum.fasta"))
