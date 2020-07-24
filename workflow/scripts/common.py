@@ -1,7 +1,19 @@
 from os.path import join as opj, exists
 import sys
 
-def get_samples(df, data_dir):
+def exit(sample_id, R1, R2):
+    sys.exit("""
+
+###### WORKFLOW ERROR ######
+Sample {} has no SRA id and missing at least one of
+R1: {}
+R2: {}
+###### WORKFLOW ERROR ######
+
+            """.format(sample_id, R1, R2))
+
+
+def get_samples(df, data_dir, mock_samples):
     """
     Parses the sample list and generates a sample dictionary and a pool
     dictionary with information on how the workflow should handle input.
@@ -11,36 +23,42 @@ def get_samples(df, data_dir):
     :return: sample_dict, pool_dict dictionaries
     """
     sample_dict = {}
-    pool_dict = {}
+    dirnames = []
+    mocks = []
+    if mock_samples == None:
+        mock_samples = []
     for i in df.index:
+        mock = False
         r = df.loc[i]
-        pool_id = r["sample"]
+        sample_id = r["sample"]
+        if sample_id in mock_samples:
+            mock = True
+        # Check if there's a dirname for sample
         try:
-            run_id = r.run_id
-            sample_id = "{}.{}".format(pool_id, run_id)
+            dirname = r.dirname
         except AttributeError:
-            sample_id = r["sample"]
+            dirname = ""
+        dirnames.append(dirname)
         # Set start location for sample
-        R1 = opj(data_dir, "{}_R1.fastq.gz".format(sample_id))
-        R2 = opj(data_dir, "{}_R2.fastq.gz".format(sample_id))
+        R1 = opj(data_dir, dirname, "{}_R1.fastq.gz".format(sample_id))
+        R2 = opj(data_dir, dirname, "{}_R2.fastq.gz".format(sample_id))
+        # Check for duplicate sample names
+        nums = df.loc[df["sample"] == sample_id].shape[0]
+        if nums > 1:
+            sample_id = "{}-{}".format(sample_id, i)
+        if dirname not in sample_dict.keys():
+            sample_dict[dirname] = {sample_id: {}}
+        else:
+            sample_dict[dirname][sample_id] = {}
+        if mock:
+            mocks.append(sample_id)
+        sample_dict[dirname][sample_id]["R1"] = R1
+        sample_dict[dirname][sample_id]["R2"] = R2
         # See if the sample has an SRA id that can be used to download it
         if "sra_id" in df.columns:
-            sample_dict[sample_id] = r.sra_id
+            sample_dict[dirname][sample_id]["acc"] = r.sra_id
         # If not, check that the starting file exists under data dir
         else:
             if not exists(R1) or not exists(R2):
-                sys.exit("""
-                
-###### WORKFLOW ERROR ######
-Sample {} has no SRA id and missing at least one of
-R1: {}
-R2: {}
-###### WORKFLOW ERROR ######
-                
-                """.format(sample_id, R1, R2))
-        # Add files to pool
-        if pool_id not in pool_dict.keys():
-            pool_dict[pool_id] = {"R1": [], "R2": []}
-        pool_dict[pool_id]["R1"].append(R1)
-        pool_dict[pool_id]["R2"].append(R2)
-    return sample_dict, pool_dict
+                exit(sample_id, R1, R2)
+    return sample_dict, list(set(dirnames)), mocks

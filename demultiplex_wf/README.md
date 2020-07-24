@@ -43,3 +43,17 @@ the `docker run` command, _e.g._:
 ```bash
 docker run -v $(pwd)/qc:/analysis/results/report -v $(pwd)/data:/analysis/results/DeML_pooled natstreetlab/amplicon_wf:deml --config test=True
 ```
+
+To run the container in interactive mode and store output from both the `data/` 
+and `results/` folders on your system you can run:
+
+```bash
+docker run -v $(pwd)/results:/analysis/results -v $(pwd)/data:/analysis/data --rm -it --entrypoint /bin/bash natstreetlab/amplicon_wf:deml
+```
+
+Then execute the workflow from within the container (you may increase the number
+ of cores with `-j`):
+
+```bash
+snakemake -j 4 -p
+```

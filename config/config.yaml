@@ -6,9 +6,6 @@ results_dir: "results"
 # Run in test-mode to only use a subset of reads
 test: True
 
-# Performance
-threads: 8
-
 # Parameters
 cutadapt:
   FWD: "CTTGGTCATTTAGAGGAAGTAA"
@@ -19,7 +16,20 @@ cutadapt:
 # Dada2
 dada2:
   maxN: 0
-  maxEE: "c(6,6)"
+  maxEE_R1: 6
+  maxEE_R2: 6
   truncLen: 0
   truncQ: 2
   minLen: 50
+
+# database
+unite:
+  url: "https://files.plutof.ut.ee/doi/06/A2/06A2C86256EED64085670EB0C54B7115F6DAC8F311C656A9CB33E386CFABA0D0.zip"
+
+# its info
+its:
+  type: "ITS1"
+
+# mock sample names
+mock:
+  - "its.mock.none.t5.0"

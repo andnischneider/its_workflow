@@ -1,22 +1,33 @@
 include: "rules/common.smk"
 
+localrules:
+    all,
+    fastq_dump,
+    link,
+    generate_revcomp,
+    merge_libraries,
+    download_unite
+
 rule all:
     """
     Collect the main outputs of the workflow
     """
     input:
-        expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f","r"]),
-        expand(opj(config["results_dir"], "dada2", "{y}.rds"), y=["mergers","seqtab"])
+        opj(config["results_dir"], "taxa.rds")
+
 
 rule fastq_dump:
+    """
+    Downloads fastq files from a remote sequence read archive
+    """
     output:
-        R1 = opj(config["data_dir"], "{sample_id}_R1.fastq.gz"),
-        R2 = opj(config["data_dir"], "{sample_id}_R2.fastq.gz")
+        R1 = opj(config["data_dir"], "{dirname}", "{sample_id}_1.fastq.gz"),
+        R2 = opj(config["data_dir"], "{dirname}", "{sample_id}_2.fastq.gz")
     log:
-        opj(config["results_dir"], "logs","sra-tools", "{sample_id}.log")
+        opj(config["results_dir"], "logs", "{dirname}", "sra-tools", "{sample_id}.log")
     params:
         data_dir = lambda wildcards, output: os.path.dirname(output.R1),
-        acc = lambda wildcards: samples[wildcards.sample_id],
+        acc = lambda wildcards: samples[wildcards.dirname][wildcards.sample_id]["acc"],
         spots = config["spots"]
     conda:
         "envs/sratools.yml"
@@ -28,41 +39,52 @@ rule fastq_dump:
         mv {params.data_dir}/{params.acc}_2.fastq.gz {output.R2}
         """
 
-rule pool:
-    """Collect all samples with same sampleName but different runID"""
+def symlink(input, output):
+    """
+    Generates symlinks with absolute paths as the start point of the workflow
+    :param input: Input fastq file
+    :param output: Symlinked fastq file
+    :return:
+    """
+    from os.path import abspath
+    from os import symlink
+    src = abspath(input)
+    dst = abspath(output)
+    symlink(src, dst)
+
+rule link:
     input:
-        lambda wildcards: pools[wildcards.pool_id][wildcards.R]
+        lambda wildcards: samples[wildcards.dirname][wildcards.sample_id][wildcards.R]
     output:
-        opj(config["results_dir"], "intermediate", "pooled", "{pool_id}_{R}.fastq.gz"),
-    message:
-        "Pooling {wildcards.pool_id}_R{wildcards.R}.fastq.gz"
+        temp(opj(config["results_dir"], "{dirname}", "{sample_id}_{R}.fastq.gz"))
     run:
-        if len(input) == 1:
-            src = os.path.abspath(input[0])
-            dst = os.path.abspath(output[0])
-            shell("ln -s {src} {dst}")
-        else:
-            shell("gunzip -c {input} | gzip -c > {output}")
+        symlink(input[0], output[0])
 
 rule prefilter:
-    """Runs the ITS prefiltering step for ambiguous bases"""
+    """
+    Runs the ITS prefiltering step for ambiguous bases
+    """
     input:
-        R1 = opj(config["results_dir"], "intermediate", "pooled",
-                 "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "pooled",
-                 "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "{sample_id}_R2.fastq.gz"),
     output:
-        R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R2.fastq.gz"),
+        rds = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}.rds")
     log:
-        opj(config["results_dir"], "logs", "prefilter", "{pool_id}.log")
-    threads: config["threads"]
+        opj(config["results_dir"], "logs", "{dirname}", "prefilter", "{sample_id}.log")
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "envs/dada2.yml"
     script:
         "scripts/filter.R"
 
 rule generate_revcomp:
+    """
+    Generates a reverse complement of the cutadapt sequences
+    """
     output:
         fwd_rc = temp(opj(config["results_dir"], "intermediate", "fwd_rc")),
         rev_rc = temp(opj(config["results_dir"], "intermediate", "rev_rc"))
@@ -78,25 +100,29 @@ rule generate_revcomp:
         """
 
 rule cut_ITS_primers:
-    """Removes primers from ITS data using cutadapt"""
+    """
+    Removes primers from ITS data using cutadapt
+    """
     input:
-        R1 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "prefilter", "{pool_id}_R2.fastq.gz"),
+        R1 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "prefilter", "{sample_id}_R2.fastq.gz"),
         fwd_rc = opj(config["results_dir"], "intermediate", "fwd_rc"),
         rev_rc = opj(config["results_dir"], "intermediate", "rev_rc")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R2.fastq.gz")
     log:
-        opj(config["results_dir"], "logs", "cutadapt", "{pool_id}.log")
+        opj(config["results_dir"], "logs", "{dirname}", "cutadapt", "{sample_id}.log")
     params:
         FWD = config["cutadapt"]["FWD"],
         REV = config["cutadapt"]["REV"],
         n = config["cutadapt"]["n"],
         min_len = config["cutadapt"]["minimum_length"]
-    threads: config["threads"]
+    threads: 4
     conda:
         "envs/cutadapt.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     shell:
         """
         A=$(cat {input.fwd_rc})
@@ -108,46 +134,68 @@ rule cut_ITS_primers:
         """
 
 rule filterAndTrim:
+    """
+    Runs read filtering and trimming of input reads 
+    """
     input:
-        R1 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "cutadapt", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "cutadapt", "{sample_id}_R2.fastq.gz")
     output:
-        R1 = opj(config["results_dir"], "intermediate", "filtertrim", "R1", "{pool_id}_R1.fastq.gz"),
-        R2 = opj(config["results_dir"], "intermediate", "filtertrim", "R2", "{pool_id}_R2.fastq.gz")
+        R1 = opj(config["results_dir"], "{dirname}", "filtertrim", "R1", "{sample_id}_R1.fastq.gz"),
+        R2 = opj(config["results_dir"], "{dirname}", "filtertrim", "R2", "{sample_id}_R2.fastq.gz"),
+        rds = opj(config["results_dir"], "{dirname}", "filtertrim", "{sample_id}.rds")
     log:
-        opj(config["results_dir"], "logs", "filtertrim", "{pool_id}.log")
-    threads: config["threads"]
+        opj(config["results_dir"], "logs", "{dirname}", "filtertrim", "{sample_id}.log")
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "envs/dada2.yml"
     params:
         maxN = config["dada2"]["maxN"],
         truncQ = config["dada2"]["truncQ"],
         truncLen = config["dada2"]["truncLen"],
-        maxEE = config["dada2"]["maxEE"],
+        maxEE_R1 = config["dada2"]["maxEE_R1"],
+        maxEE_R2 = config["dada2"]["maxEE_R2"],
         minLen = config["dada2"]["minLen"]
     script:
         "scripts/filter.R"
 
+
+def get_dada2_input(wildcards):
+    """
+    Collects all input files for dada2 for each input directory
+
+    :param wildcards: snakemake wildcards
+    :return:
+    """
+    files = expand(opj(config["results_dir"], wildcards.dirname, "filtertrim",
+                       "R1", "{sample_id}_R1.fastq.gz"),
+                    sample_id=samples[wildcards.dirname].keys())
+    files += expand(opj(config["results_dir"], wildcards.dirname, "filtertrim",
+                        "R2", "{sample_id}_R2.fastq.gz"),
+                    sample_id=samples[wildcards.dirname].keys())
+    return files
+
+
 rule dada2:
-    """Calls DADA2 Rscript with trimmed input"""
+    """
+    Runs DADA2 with trimmed input
+    """
     input:
-        expand(opj(config["results_dir"], "intermediate", "filtertrim", "R1",
-                         "{pool_id}_R1.fastq.gz"),
-                     pool_id = pools.keys()),
-        expand(opj(config["results_dir"], "intermediate", "filtertrim", "R2",
-                         "{pool_id}_R2.fastq.gz"),
-                     pool_id = pools.keys())
+        get_dada2_input
     output:
-        expand(opj(config["results_dir"], "dada2", "dada_{x}.rds"), x=["f", "r"]),
-        expand(opj(config["results_dir"], "dada2", "{y}.rds"), y=["mergers", "seqtab"])
+        expand(opj(config["results_dir"], "{{dirname}}", "dada2", "{f}.rds"),
+               f=["dada_f", "dada_r", "mergers", "seqtab", "seqtab_nc"]),
+        opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
     log:
-        opj(config["results_dir"], "logs", "dada2", "dada2.log")
+        opj(config["results_dir"], "logs", "{dirname}", "dada2", "dada2.log")
     params:
-        fw_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R1"),
-        rv_dir = opj(config["results_dir"], "intermediate", "filtertrim", "R2"),
-        out_dir = opj(config["results_dir"], "dada2")
+        fw_dir = opj(config["results_dir"], "{dirname}", "filtertrim", "R1"),
+        rv_dir = opj(config["results_dir"], "{dirname}", "filtertrim", "R2"),
+        out_dir = opj(config["results_dir"], "{dirname}", "dada2")
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48,
+        runtime = lambda wildcards, attempt: attempt**2*60*24,
         mem_mb = 64000
     threads: 8
     conda:
@@ -156,4 +204,158 @@ rule dada2:
         """
         Rscript --vanilla workflow/scripts/runDada2.R {params.fw_dir} {params.rv_dir} \
             {params.out_dir} {threads} > {log} 2>&1
+        """
+
+rule itsx:
+    """
+    Runs ITSx to extract ITS sequences from the ASV sequences
+    """
+    input:
+        opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
+    output:
+        expand(opj(config["results_dir"], "{{dirname}}", "itsx", "itsx.{suffix}"),
+               suffix = ["{}.full_and_partial.fasta".format(config["its"]["type"]),
+                         "graph","positions.txt","problematic.txt",
+                         "summary.txt"])
+    log:
+        opj(config["results_dir"], "logs", "{dirname}", "itsx", "itsx.log")
+    params:
+        prefix=lambda wildcards, output: os.path.dirname(output[0])
+    conda:
+        "envs/itsx.yml"
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+         """
+         ITSx -i {input} -o {params.prefix}/itsx --cpu {threads} --multi_thread T \
+            --preserve T --partial 50 --minlen 50 > {log} 2>&1
+         """
+
+rule process_itsx:
+    """
+    Run post-processing on extracted ITS sequences
+    """
+    input:
+        seqtab = opj(config["results_dir"], "{dirname}", "dada2", "seqtab_nc.rds"),
+        its_out = opj(config["results_dir"], "{dirname}", "itsx",
+                      "itsx.{its_type}.full_and_partial.fasta".format(its_type=config["its"]["type"])),
+        its_in = opj(config["results_dir"], "{dirname}", "dada2", "seqs.fasta")
+    output:
+        seqtab=opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds"),
+        mock=touch(opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.mock.rds"))
+    log:
+        opj(config["results_dir"], "logs", "{dirname}", "itsx", "process_itsx.log")
+    conda:
+        "envs/dada2.yml"
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    params:
+        mock = ",".join(mocks)
+    script:
+        "scripts/ProcessITSx.R"
+
+rule merge_libraries:
+    """
+    Merges the sequence tables from ITSx
+    """
+    input:
+        expand(opj(config["results_dir"], "{dirname}", "itsx", "seqtab.nc_itsx_clean.rds"),
+               dirname = dirnames)
+    output:
+        opj(config["results_dir"], "merged", "seqtab.nc_all.rds"),
+        opj(config["results_dir"], "merged", "seqs_sum.fasta")
+    log:
+        opj(config["results_dir"], "logs", "merge_libraries.log")
+    conda:
+        "envs/dada2.yml"
+    params:
+        dirnames = " ".join([opj(config["results_dir"], dirname, "itsx") for dirname in dirnames]),
+        output_dir = lambda wildcards, output: os.path.dirname(output[0])
+    shell:
+        """
+        Rscript --vanilla workflow/scripts/MergeLibraries.R {params.output_dir} \
+            {params.dirnames} > {log} 2>&1 
+        """
+
+rule swarm:
+    """
+    Cluster sequences using SWARM
+    """
+    input:
+        opj(config["results_dir"], "merged", "seqs_sum.fasta")
+    output:
+        txt=opj(config["results_dir"], "swarm", "results.txt"),
+        seeds=opj(config["results_dir"], "swarm", "seeds.fasta")
+    log:
+        opj(config["results_dir"], "logs", "swarm.log")
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    conda:
+        "envs/swarm.yml"
+    shell:
+        """
+        swarm -t {threads} -d 3 -z --output-file {output.txt} \
+            --seeds {output.seeds} {input} > {log} 2>&1
+        """
+
+rule process_swarm:
+    input:
+        seqtab=opj(config["results_dir"], "merged", "seqtab.nc_all.rds"),
+        seqs_sum=opj(config["results_dir"], "merged", "seqs_sum.fasta"),
+        txt=opj(config["results_dir"], "swarm", "results.txt"),
+        seeds=opj(config["results_dir"], "swarm", "seeds.fasta")
+    output:
+        opj(config["results_dir"], "swarm", "seqtab_final.rds")
+    log:
+        opj(config["results_dir"], "logs", "process_swarm.log")
+    conda:
+        "envs/dada2.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    params:
+        swarm_in = lambda wildcards, input: os.path.dirname(input.seqtab),
+        swarm_res = lambda wildcards, input: os.path.dirname(input.txt)
+    shell:
+        """
+        Rscript --vanilla workflow/scripts/processSwarm.R {params.swarm_res} \
+            {params.swarm_in} {params.swarm_res} > {log} 2>&1
+        """
+
+rule download_unite:
+    output:
+        opj("resources", "unite", "unite.fasta")
+    log:
+        opj("resources", "unite", "log")
+    params:
+        unite_url = config["unite"]["url"],
+        dir = lambda wildcards, output: os.path.dirname(output[0])
+    shell:
+        """
+        curl -o {params.dir}/unite.zip -L {params.unite_url} > {log} 2>&1
+        unzip -d {params.dir} {params.dir}/unite.zip > {log} 2>&1
+        cat {params.dir}/sh*.fasta > {params.dir}/unite
+        rm -rf {params.dir}/developer {params.dir}/unite.zip {params.dir}/*.fasta
+        mv {params.dir}/unite {params.dir}/unite.fasta
+        """
+
+rule dada2_tax:
+    input:
+        opj(config["results_dir"], "swarm", "seqtab_final.rds"),
+        opj("resources", "unite", "unite.fasta")
+    output:
+        opj(config["results_dir"], "taxa.rds")
+    log:
+        opj(config["results_dir"], "logs", "dada2tax.log")
+    conda:
+        "envs/dada2.yml"
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        Rscript --vanilla workflow/scripts/rundada2TAX.R {input[0]} {input[1]} \
+            {output[0]} {threads} > {log} 2>&1
         """

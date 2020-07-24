@@ -29,40 +29,51 @@ properties:
     minimum: 1
   cutadapt:
     type: object
+    default:
+      FWD: "CTTGGTCATTTAGAGGAAGTAA"
+      REV: "GCTGCGTTCTTCATCGATGC"
+      n: 2
+      minimum_length: 50
     properties:
       FWD:
         type: string
-        default: "CTTGGTCATTTAGAGGAAGTAA"
         description: Forward primer to cut
       REV:
         type: string
-        default: "GCTGCGTTCTTCATCGATGC"
         description: Reverse primer to cut
       n:
         type: integer
-        default: 2
       minimum_length:
         type: integer
-        default: 50
         description: Minimum length for cutadapt
   dada2:
     type: object
+    default:
+      maxN: 0
+      maxEE_R1: 6
+      maxEE_R2: 6
+      truncLen: 0
+      truncQ: 2
+      minLen: 50
     properties:
       maxN:
         type: integer
-        default: 0
-      maxEE:
-        type: string
-        default: "c(6,6)"
+      maxEE_R1:
+        type: integer
+      maxEE_R1:
+        type: integer
       truncLen:
         type: integer
-        default: 0
       truncQ:
         type: integer
-        default: 2
       minLen:
         type: integer
-        default: 50
+
+mock:
+  type: array
+  description: "Sample names to treat as 'mock' which will be separated prior to ASV clustering"
+  default: []
+
 # entries that have to be in the config file for successful validation
 required:
   - samples

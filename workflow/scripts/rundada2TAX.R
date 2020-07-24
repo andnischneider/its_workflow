@@ -1,20 +1,28 @@
-#!/mnt/aspnas/sw/bin/Rscript
+#!/usr/bin/env Rscript
 
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 3) {
-  stop('usage: rundada2TAX.R <seqtab.rds> <taxonomy database> <output dir>')
+if (length(args) != 4) {
+  stop('usage: rundada2TAX.R <seqtab.rds> <taxonomy database> <output dir> <threads>')
 }
 
 seq.tab.rds <- args[1]
 tax_db <- args[2]
 out <- args[3]
+threads <- args[4]
 
 library(dada2)
-library(here)
+library(RcppParallel)
+
+multithreading <- FALSE
+
+if (threads > 1) {
+  setThreadOptions(numThreads = as.integer(threads))
+  multithreading <- TRUE
+}
 
 seq.tab <- readRDS(seq.tab.rds)
 
-taxa <- assignTaxonomy(seq.tab, tax_db, tryRC = TRUE, multithread = TRUE)
+taxa <- assignTaxonomy(seq.tab, tax_db, tryRC = TRUE, multithread = multithreading)
 
-saveRDS(taxa, here(paste0(out, "taxa.rds")))
+saveRDS(taxa, out)
