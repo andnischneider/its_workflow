@@ -1,9 +1,15 @@
 # Amplicon data preprocessing and analysis workflow for Schneider et al.
 
-This repository contains code to analyse the ITS amplicon sequencing data with DADA2 for further comparisons with RNA-seq data from the same samples. It uses data collected for Haas et al (2018) but processed with a different method. 
-
-## Abstract
-
-The health, growth and fitness of boreal forest trees is impacted and improved by their associated fungal and bacterial microbiomes. Microbial, as well as plant host gene expression and functional activity can be assayed with RNA sequencing (RNA-Seq) data from host samples. In contrast, phylogenetic marker gene amplicon sequencing data is used to assess taxonomic composition and community structure of the microbiome. Few studies have considered how much of this structural and taxonomic information is included in transcriptomic data from the same sample. Here we describe fungal communities using both host-derived RNA-Seq and fungal ITS1 DNA amplicon sequencing and investigate the similarities and differences between the methods. As a study system we used a panel of root and needle samples from the tree species Picea abies (Norway spruce) growing in control (nutrient deficient) and nutrient enriched plots at the Flakaliden forest research site in northern boreal Sweden. We show that the fungal transcriptome is correlated with community structure of the ITS data. Direct comparison of different taxonomic units between transcriptomic and amplicon databases and sequencing data of both methods reveals that currently the main limitation of fungal metatranscriptomic data is insufficient database representation. RNA-Seq data provides additional insights into active biological pathways and their dynamics under different conditions. In the future, increasing database coverage will further enable RNA-Seq data to also answer questions about community structure and taxonomic composition of fungal communities.
+This repository contains code to analyse the ITS amplicon sequencing data with DADA2 for further comparisons with RNA-seq data from the same samples. It uses data collected for Haas et al (2018), but using dada2 and Swarm clustering instead of OTU clustering.
 
 ## Repository contents
+
+The repository consists of two units:
+
+### 1 demultiplex_wf -> download and demultiplex raw data
+
+The folder contains instructions on how to run the workflow as a docker container. It will download the raw data from the ENA and demultiplex the sequences into files per sample.
+
+### 2 workflow -> ITS amplicon sequencing data preprocessing workflow
+
+The folder contains a snakemake workflow that will reproduce the preprocessing of the demultiplexed ITS amplicon sequencing data as used in the study.
