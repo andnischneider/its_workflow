@@ -8,7 +8,7 @@ The repository consists of two units:
 
 ### 1 demultiplex_wf -> download and demultiplex raw data
 
-The folder contains instructions on how to run the workflow as a docker container. It will download the raw data from the ENA and demultiplex the sequences into files per sample.
+The folder contains instructions on how to run the workflow as a docker container. It will download the raw data from the ENA and demultiplex the sequences into files per sample, as well as concatenate technical replicates.
 
 ### 2 workflow -> ITS amplicon sequencing data preprocessing workflow
 
