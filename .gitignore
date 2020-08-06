@@ -8,6 +8,7 @@ Comparison_cache
 Comparison_files
 logs
 .#*
+resources
 results
 *__pycache__
 .snakemake
