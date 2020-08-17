@@ -19,3 +19,5 @@ gene_taxonomy.tsv
 Assembly_2012.tpm.tsv
 
 kingdom.Fungi.kos.raw.tsv
+
+annotation_results.emapper.annotations
