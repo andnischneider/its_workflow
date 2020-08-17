@@ -40,3 +40,7 @@ snakemake -s $(pwd)/workflow/Snakefile -pr -j 4 --use-conda
 
 This will output the final count matrix and other results (such as sequences for every Swarm OTU and taxonomic assignments)
 into the results/ folder.
+
+### 3 analysis -> R scripts to analyse ITS and RNA data
+
+The folder contains scripts to reproduce the figures in the publication.
