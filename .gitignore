@@ -4,6 +4,8 @@ data
 .Rproj.user
 .Rhistory
 .RData
+analysis/RDS
+analysis/Figures
 Comparison_cache
 Comparison_files
 data/RNA/
