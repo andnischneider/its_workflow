@@ -11,6 +11,9 @@ The name of the folders and scripts indicate which figure will be reproduced wit
 Additionally, some of the output files from the RNA-Seq metatranscriptomic workflow have to be copied into *data/RNA*. The following files are needed to reproduce all figures:
 
 Assembly_2012.raw.tsv
+
 gene_taxonomy.tsv
+
 Assembly_2012.tpm.tsv
+
 kingdom.Fungi.kos.raw.tsv
