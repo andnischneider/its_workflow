@@ -6,7 +6,7 @@ This folder contains R scripts to reproduce figures in the publication "Comparat
 
 ## Instructions
 
-Each of the scripts can be run independently, once **Prepare_ALL.R** has been fully executed.
+Each of the scripts can be run independently, once **Prepare_ALL.R** has been fully executed, but the starting point for every *Figure_X.R* script is a clean R environment.
 
 Before the R scripts can be run, these three repositories have to be pulled (this assumes your starting point is in the root of the repository).
 
