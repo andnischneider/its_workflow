@@ -4,9 +4,9 @@ data
 .Rproj.user
 .Rhistory
 .RData
-results
 Comparison_cache
 Comparison_files
+data/RNA/
 logs
 .#*
 resources
