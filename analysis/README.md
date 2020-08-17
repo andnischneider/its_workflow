@@ -8,19 +8,6 @@ This folder contains R scripts to reproduce figures in the publication "Comparat
 
 Each of the scripts can be run independently, once **Prepare_ALL.R** has been fully executed, but the starting point for every *Figure_X.R* script is a clean R environment.
 
-Before the R scripts can be run, these three repositories have to be pulled (this assumes your starting point is in the root of the repository).
-
-```bash
-mkdir src
-
-cd src
-
-git clone https://github.com/loalon/Rtoolbox.git
-
-git clone https://github.com/UPSCb/UPSCb-common.git
-```
-
-
 The name of the folders and scripts indicate which figure will be reproduced with the contained code. Before any of the figures can be plotted, the data has to be processed using the **Prepare_ALL.R** script
 
 Additionally, some of the output files from the RNA-Seq metatranscriptomic workflow have to be copied into *data/RNA*. The following files are needed to reproduce all figures:
