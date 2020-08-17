@@ -3,7 +3,7 @@ library(stringr)
 library(reshape2)
 library(ggplot2)
 library(RColorBrewer)
-source(here("../src/featureSelection.R"))
+source(here("../src/UPSCb-common/src/R/featureSelection.R"))
 source(here("../src/ggplot_format.R"))
 
 ####IMPORT RNA DATA
@@ -73,7 +73,7 @@ annot_tax_filt <- annot_tax[annot_tax$gene %in% rownames(rna_sum_all),]
 colnames(annot_tax_filt) <- str_to_title(colnames(annot_tax_filt))
 
 tax_filt <- unique(annot_tax_filt[,-1])
-write.csv(tax_filt, here("RNA_Unique_Taxa.csv"), quote = FALSE)
+write.csv(tax_filt, here("../data/RNA/RNA_Unique_Taxa.csv"), quote = FALSE)
 
 #Import ITS data
 its_mat <- read.csv(here("../data/Amplicon/count_mat_NEW.csv"), row.names = 1)
@@ -81,7 +81,7 @@ tax_its <- read.csv(here("../data/Amplicon/taxa_full_NEW.csv"), row.names = 1)
 tax_its$Species <- paste(tax_its$Genus, tax_its$Species)
 tax_its$Species <- ifelse(grepl("NA", tax_its$Species), NA, tax_its$Species)
 tax_its_un <- unique(tax_its)
-write.csv(tax_its_un, here("Amplicon_Unique_Taxa.csv"), quote = FALSE)
+write.csv(tax_its_un, here("../data/Amplicon/Amplicon_Unique_Taxa.csv"), quote = FALSE)
 
 ##Extract sets of taxa that are non-overlapping at each taxonomic level
 
@@ -159,7 +159,7 @@ ggplot(props_its2, aes(x = Level, y = Proportion, fill = Type))+
   ggformat+
   theme(legend.position = "none")+
   ggtitle("Percentage of SOTUs belonging to \n common/unique/unknown taxonomic units")
-ggsave(here("Identified_bars_ITS_SOTULevel.pdf"), width = 5, height = 3)
+ggsave(here("Figures/Fig3_Identified_bars_ITS_SOTULevel.pdf"), width = 5, height = 3)
 
 #The same for the RNA data
 props_rna <- data.frame(cbind(Level=c(colnames(annot_tax_filt)[4:9]),
@@ -201,7 +201,7 @@ ggplot(props_rna2, aes(x = Level, y = Proportion, fill = Type))+
   ggformat+
   theme(legend.position = "none")+
   ggtitle("Percentage of Transcripts belonging to \n common/unique/unknown taxonomic units")
-ggsave(here("Identified_bars_RNA_TranscriptLevel.pdf"), width = 5, height = 3)
+ggsave(here("Figures/Fig3_Identified_bars_RNA_TranscriptLevel.pdf"), width = 5, height = 3)
 
 ##############################
 ##########And now get the percentages of reads.
@@ -284,7 +284,7 @@ ggplot(percentages4_rna, aes(x = Level, y = value))+
   theme(legend.position = "none")#+
   #ggtitle("Percentage of Transcript read counts \n belonging to common/unique/unknown \n taxonomic units")
 
-ggsave(here("Identified_bars_Perc_RNA.pdf"), width = 10, height = 3)
+ggsave(here("Figures/FigS3_Identified_bars_Perc_RNA.pdf"), width = 10, height = 3)
 
 percentages4_its <- percentages4[grepl("ITS", percentages4$Group),]
 percentages4_its$Level <- gsub("^[[:alpha:]]+_ITS_", "", percentages4_its$Group)
@@ -307,7 +307,7 @@ ggplot(percentages4_its, aes(x = Level, y = value))+
   theme(legend.position = "none")#+
   #ggtitle("Percentage of SOTU read counts \n belonging to common/unique/unknown \n taxonomic units")
 
-ggsave(here("Identified_bars_Perc_ITS.pdf"), width = 10, height = 3)
+ggsave(here("Figures/FigS3_Identified_bars_Perc_ITS.pdf"), width = 10, height = 3)
 
 
 

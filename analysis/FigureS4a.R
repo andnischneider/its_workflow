@@ -5,34 +5,9 @@ library(vegan)
 library(phyloseq)
 source(here("../src/ggplot_format.R"))
 
-# #Import metadata
-# meta_all <- read.csv(here("../doc/Amplicon/meta_NEW.csv"), row.names = 1)
-# 
-# #Clean a bit
-# meta_all$Treatment <- factor(meta_all$Treatment, levels = c("ctrl",
-#                                                             "5NO",
-#                                                             "25NO"))
-# 
-# meta_all$Date <- factor(meta_all$Date, levels = c("5th.June",
-#                                                   "24th.June",
-#                                                   "6th.August",
-#                                                   "9th.October"))
-# 
-# #Import count matrix
-# count_mat <- read.csv(here("../data/Amplicon/count_mat_NEW.csv"), row.names = 1)
-# 
-# #Booleans to extract needles
-# needl <- grepl("needl", meta_all$SampleID)
-# 
-# #Extract and filter needle samples
-# count_mat_n <- count_mat[,needl]
-# count_mat_n <- count_mat_n[rowSums(count_mat_n)>0,]
-# 
-# saveRDS(count_mat_n, here("RDS/count_mat_n.rds"))
-# saveRDS(meta_all[needl,], here("RDS/meta_n_its.rds"))
 
-count_mat_n <- readRDS(here("../Prepare_first/RDS/count_mat_n.rds"))
-meta_n_its <- readRDS(here("../Prepare_first/RDS/meta_n_its.rds"))
+count_mat_n <- readRDS(here("RDS/count_mat_n.rds"))
+meta_n_its <- readRDS(here("RDS/meta_n_its.rds"))
 
 #Rarefy for Bray-Curtis PCoA
 count_mat_n_rar <- t(rrarefy(t(count_mat_n), min(colSums(count_mat_n))))
@@ -54,11 +29,11 @@ plot_ordination(ps_its_n_rar, n.ord, type = "samples", color = "Date")+
   #scale_y_reverse()+
   ggformat_pca+
   theme(legend.position = "none")
-ggsave("FigS4a_PCoA_needles.pdf", width = 3.5, height = 3)
+ggsave("Figures/FigS4a_PCoA_needles.pdf", width = 3.5, height = 3)
 
 ########Mantel & Procrustes
 #Import vst transformed RNA data
-count_mat_n_rna <- readRDS(here("../Prepare_first/RDS/vsd_sum_n.rds"))
+count_mat_n_rna <- readRDS(here("RDS/vsd_sum_n.rds"))
 
 #adjust RNA names
 colnames(count_mat_n_rna) <- gsub("Needles", "its.needle", colnames(count_mat_n_rna))

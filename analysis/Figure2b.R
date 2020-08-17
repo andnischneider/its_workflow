@@ -74,17 +74,17 @@ source(here("../src/ggplot_format.R"))
 # saveRDS(rna_r_sum_c, here("RDS/rna_r_sum_c.rds"))
 
 #Import needed files
-meta_r_sum <- readRDS(here("../Prepare_first/RDS/meta_r_sum.rds"))
-meta_n_sum <- readRDS(here("../Prepare_first/RDS/meta_n_sum.rds"))
-rna_n_sum_c <- readRDS(here("../Prepare_first/RDS/rna_n_sum_c.rds"))
-rna_r_sum_c <- readRDS(here("../Prepare_first/RDS/rna_r_sum_c.rds"))
+meta_r_sum <- readRDS(here("RDS/meta_r_sum.rds"))
+meta_n_sum <- readRDS(here("RDS/meta_n_sum.rds"))
+rna_n_sum_c <- readRDS(here("RDS/rna_n_sum_c.rds"))
+rna_r_sum_c <- readRDS(here("RDS/rna_r_sum_c.rds"))
 
 #Create list with all transcript names for roots and needles
 list_rna <- list()
 list_rna[[1]] <- rownames(rna_n_sum_c)
 list_rna[[2]] <- rownames(rna_r_sum_c)
 
-pdf("Fig2b_VennControl.pdf")
+pdf(here("Figures/Fig2b_VennControl.pdf"))
 par(mfrow=c(1,1))
 par(mar=c(0.5,0.5,0.5,0.5))
 grid.newpage()
@@ -119,7 +119,7 @@ ggplot()+
   ylab("Density")+
   coord_cartesian(xlim = c(0, 4))
 
-ggsave(here("Fig2b_density_RNA.pdf"), width = 3, height = 2.5)
+ggsave(here("Figures/Fig2b_density_RNA.pdf"), width = 3, height = 2.5)
 
 ###Density Curve with pseudocount
 #extract log transformed counts
@@ -145,7 +145,7 @@ ggplot()+
   ylab("Density")+
   coord_cartesian(xlim = c(0, 4))
 
-ggsave(here("FigS2b_density_RNA.pdf"), width = 3, height = 2.5)
+ggsave(here("Figures/FigS2b_density_RNA.pdf"), width = 3, height = 2.5)
 
 
 

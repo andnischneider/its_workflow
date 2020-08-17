@@ -8,9 +8,9 @@ source(here("../src/ggplot_format.R"))
 
 #RNA DATA FIRST
 #Shannon diversity on Genus level
-annot_tax_filt_n <- readRDS(here("../Prepare_first/RDS/annot_tax_filt_n.rds"))
+annot_tax_filt_n <- readRDS(here("RDS/annot_tax_filt_n.rds"))
 rownames(annot_tax_filt_n) <- annot_tax_filt_n$gene
-meta_n_sum <- readRDS(here("../Prepare_first/RDS/meta_n_sum.rds"))
+meta_n_sum <- readRDS(here("RDS/meta_n_sum.rds"))
 rownames(meta_n_sum) <- meta_n_sum$SampleID
 #Now we need to create a summed matrix on Genus level, through
 #phyloseq and metagenomeseq is too slow with this big dataset.
@@ -19,7 +19,7 @@ melt_filt2 <- function (mat) {
   melt2 <- melt1[melt1$Count>0,]
   return(melt2)
 }
-rna_n_sum <- readRDS(here("../Prepare_first/RDS/rna_n_sum.rds"))
+rna_n_sum <- readRDS(here("RDS/rna_n_sum.rds"))
 counts_sum_melted_rna_n <- melt_filt2(rna_n_sum)
 counts_sum_melted_rna_n2 <- merge.data.frame(counts_sum_melted_rna_n, meta_n_sum, by = "SampleID", all.x = TRUE)
 counts_sum_melted_rna_n2 <- merge.data.frame(counts_sum_melted_rna_n2, annot_tax_filt_n, by = "gene", all.x = TRUE)
@@ -27,49 +27,11 @@ counts_sum_melted_rna_n2 <- merge.data.frame(counts_sum_melted_rna_n2, annot_tax
 counts_sum_genus_rna_n <- acast(counts_sum_melted_rna_n2, genus~SampleID, value.var = "Count", fun.aggregate = sum)
 shannon_needl_genus_rna <- cbind(meta_n_sum, Shannon=diversity(counts_sum_genus_rna_n, MARGIN = 2))
 
-###Now proceed with ITS data
-# taxonomy_its <- read.csv(here("../data/Amplicon/taxa_full_NEW.csv"), row.names = 1, stringsAsFactors = FALSE)
-# #Clean and transform to nicer format
-# taxonomy_its2 <- cbind(SOTU=paste0("SOTU", 1:nrow(taxonomy_its)), taxonomy_its)
-# 
-# #Time for some clean-up of the tax table (to make the unknown annotations the same as for the RNA-Seq data)
-# taxonomy_its2$Family <- ifelse(grepl("Incertae", taxonomy_its2$Family), paste0("Uncertain.", taxonomy_its2$Genus), taxonomy_its2$Family)
-# taxonomy_its2$Family <- gsub("Uncertain.NA", NA, taxonomy_its2$Family)
-# 
-# taxonomy_its2$Order <- ifelse(grepl("Incertae", taxonomy_its2$Order), paste0("Uncertain.", taxonomy_its2$Family), taxonomy_its2$Order)
-# taxonomy_its2$Order <- gsub("Uncertain.NA", NA, taxonomy_its2$Order)
-# taxonomy_its2$Order <- gsub("Uncertain.Uncertain", "Uncertain", taxonomy_its2$Order) 
-# 
-# taxonomy_its2[is.na(taxonomy_its2)] <- "unidentified"
-# 
-# taxonomy_its2$Phylum <- ifelse(grepl("unidentified", taxonomy_its2$Phylum), 
-#                                paste0("Unclassified.", taxonomy_its2$Kingdom),
-#                                taxonomy_its2$Phylum)
-# 
-# #Let's make a function to automate this
-# fixNAtax <- function(tax, rank) {
-#   coln <- which(colnames(tax)==rank)
-#   namen <- colnames(tax)[coln]
-#   namen1 <- colnames(tax)[coln-1]
-#   tax[,namen] <- ifelse(grepl("Unclassified", tax[,namen1]),
-#                         tax[,namen1],
-#                         tax[,namen])
-#   tax[,namen] <- ifelse(grepl("unidentified", tax[,namen]),
-#                         paste0("Unclassified.", tax[,namen1]),
-#                         tax[,namen])
-#   return(tax)
-# }
-# taxonomy_its3 <- fixNAtax(taxonomy_its2, "Class")
-# taxonomy_its3 <- fixNAtax(taxonomy_its3, "Order")
-# taxonomy_its3 <- fixNAtax(taxonomy_its3, "Family")
-# taxonomy_its3 <- fixNAtax(taxonomy_its3, "Genus")
-# taxonomy_its3 <- fixNAtax(taxonomy_its3, "Species")
-
-taxonomy_its3 <- readRDS(here("../Prepare_first/RDS/taxonomy_cleaned_adjusted.rds"))
+taxonomy_its3 <- readRDS(here("RDS/taxonomy_cleaned_adjusted.rds"))
 
 ##Continue with meta and count data
-meta_n_its <- readRDS(here("../Prepare_first/RDS/meta_n_its.rds"))
-count_mat_n <- readRDS(here("../Prepare_first/RDS/count_mat_n.rds"))
+meta_n_its <- readRDS(here("RDS/meta_n_its.rds"))
+count_mat_n <- readRDS(here("RDS/count_mat_n.rds"))
 
 taxonomy_its3_n <- taxonomy_its3[rownames(count_mat_n),]
 
@@ -114,7 +76,7 @@ ggplot(needl_shannon_genus_both, aes(x = Shannon_ITS, y = Shannon_RNA, col = dat
         axis.title.x = element_text(),
         legend.position = "none")
 
-ggsave(here("FigS4c_Shannon_scatter_need.pdf"), width = 2.3, height = 2.4)
+ggsave(here("Figures/FigS4c_Shannon_scatter_need.pdf"), width = 2.3, height = 2.4)
 
 #Pearson corr
 cor(needl_shannon_genus_both$Shannon_ITS, needl_shannon_genus_both$Shannon_RNA)
@@ -145,7 +107,7 @@ summary(shannon_posthoc_d)
 #Test for significance; ITS timepoint
 shannon_model_its_d <- lme(Shannon_ITS~date, random = ~1|plot, data = needl_shannon_genus_both, method = "ML")
 anova(shannon_model_its_d)
-
-shannon_posthoc_its_d <- glht(shannon_model_its_d, linfct=mcp(date="Tukey"))
-summary(shannon_posthoc_its_d)
+#Nope
+# shannon_posthoc_its_d <- glht(shannon_model_its_d, linfct=mcp(date="Tukey"))
+# summary(shannon_posthoc_its_d)
 #No significant differences

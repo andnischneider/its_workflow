@@ -1,10 +1,10 @@
 library(here)
 library(DESeq2)
 library(ggplot2)
-source(here("../src/Rtoolbox/src/utilsDE.r"))
-source(here("../src/Rtoolbox/src/plotUpAndDown.R"))
+source(here("../src/Rtoolbox/old/utilsDE.r"))
+source(here("../src/Rtoolbox/old/plotUpAndDown.R"))
 source(here("../src/UPSCb-common/src/R/gopher.R"))
-source(here("../src/Rtoolbox/src/plotEnrichedTreemap.R"))
+source(here("../src/Rtoolbox/old/plotEnrichedTreemap.R"))
 source(here("../src/ggplot_format.R"))
 
 
@@ -12,10 +12,10 @@ source(here("../src/ggplot_format.R"))
 #Shows strong response
 
 #Import count matrix and taxonomic annotations (from Fig 7)
-mat_r_sum <- readRDS(here("../Prepare_first/RDS/rna_r_sum.rds"))
-meta_r_sum <- readRDS(here("../Prepare_first/RDS/meta_r_sum.rds"))
+mat_r_sum <- readRDS(here("RDS/rna_r_sum.rds"))
+meta_r_sum <- readRDS(here("RDS/meta_r_sum.rds"))
 
-tax <- readRDS(here("../Prepare_first/RDS/annot_tax_filt.rds"))
+tax <- readRDS(here("RDS/annot_tax_filt.rds"))
 #How many Cortinarius transcripts
 nrow(tax[tax$genus=="Cortinarius",])
 tax_cort <- tax[tax$genus=="Cortinarius",]
@@ -68,7 +68,7 @@ plotUpAndDown(fert25_vs_control.res.filter)+
   #coord_cartesian(ylim = c(-750, 750))+
   ggtitle("25 years vs Control")+
   ggformat
-ggsave(here("Fig8a_Cortinarius_25vsC.pdf"), width = 3.6, height = 5)
+ggsave(here("Figures/Fig8a_Cortinarius_25vsC.pdf"), width = 3.6, height = 5)
 
 #Save as separate objects and add transcripts as extra columns, to keep duplicates
 fert25_vs_C.T1 <- as.data.frame(fert25_vs_control.res.filter[[1]])
@@ -125,11 +125,11 @@ kos_cort <- unique(strsplit(paste(kos_cort, collapse = ","), ",")[[1]])
 enr.UP <- gopher(kos_up, task = list("ko_pathway"), alpha=0.05, url = "ko", endpoint = "enrichment")
 enr.DOWN <- gopher(kos_down, task = list("ko_pathway"), alpha=0.001, url = "ko", endpoint = "enrichment")
 
-pdf(here("Fig8b_TreemapUp.pdf"), width = 10, height = 5)
+pdf(here("Figures/Fig8b_TreemapUp.pdf"), width = 10, height = 5)
 plotEnrichedTreemap(enr.UP, enrichment = "ko_pathway", de = "up", sizeCol = "nt")
 dev.off()
 
-pdf(here("Fig8b_TreemapDown.pdf"), width = 10, height = 5)
+pdf(here("Figures/Fig8b_TreemapDown.pdf"), width = 10, height = 5)
 plotEnrichedTreemap(enr.DOWN, enrichment = "ko_pathway", de = "down", sizeCol = "nt")
 dev.off()
 

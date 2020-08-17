@@ -50,7 +50,7 @@ list_its[[2]] <- rownames(count_mat_r_c)
 
 pal=brewer.pal(8,"Dark2")
 
-pdf(here("Fig2a_VennControl.pdf"))
+pdf(here("Figures/Fig2a_VennControl.pdf"))
 par(mfrow=c(1,1))
 par(mar=c(0.5,0.5,0.5,0.5))
 grid.newpage()
@@ -84,7 +84,7 @@ ggplot()+
   ylab("Density")+
   coord_cartesian(xlim = c(0, 4))
 
-ggsave(here("Fig2a_density_ITS.pdf"), width = 3, height = 2.5)
+ggsave(here("Figures/Fig2a_density_ITS.pdf"), width = 3, height = 2.5)
 
 ##Density curve with pseudocount
 #Extract log transformed counts
@@ -109,7 +109,7 @@ ggplot()+
   ylab("Density")+
   coord_cartesian(xlim = c(0, 4))
 
-ggsave(here("FigS2a_density_ITS.pdf"), width = 3, height = 2.5)
+ggsave(here("Figures/FigS2a_density_ITS.pdf"), width = 3, height = 2.5)
 
 
 

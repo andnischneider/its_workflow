@@ -5,7 +5,7 @@
 
 library(here)
 library(DESeq2)
-source(here("../src/featureSelection.R"))
+source(here("../src/UPSCb-common/src/R/featureSelection.R"))
 
 #FIGURE 2
 #Import meta files and add filtering factor
@@ -64,6 +64,7 @@ meta_r_sum$treatment <- factor(meta_r_sum$treatment, levels = c("Control",
                                                                 "5_year",
                                                                 "25_year"))
 
+dir.create(here("RDS"))
 saveRDS(meta_r_sum, here("RDS/meta_r_sum.rds"))
 saveRDS(meta_n_sum, here("RDS/meta_n_sum.rds"))
 
@@ -164,9 +165,11 @@ meta_all$Date <- factor(meta_all$Date, levels = c("5th.June",
                                                   "6th.August",
                                                   "9th.October"))
 
+meta_all$Group <- as.factor(meta_all$Group)
+
 #Import count matrix
 count_mat_raw <- t(readRDS(here("../results/swarm/seqtab_final.rds")))
-
+###HERE, FIX THE FILTERING!
 taxonomy_its_raw <- readRDS(here("../results/taxa.rds"))
 taxonomy_its_raw <- gsub("^[[:alpha:]]__", "", taxonomy_its_raw)
 
@@ -180,6 +183,8 @@ count_mat <- count_mat[featureSelect(count_mat, ccc, 5, 2),]
 count_mat <- count_mat[featureSelectProp(count_mat, ccc, 0.00005),]
 
 taxonomy_its <- taxonomy_its_raw[rownames(count_mat),]
+
+count_mat <- count_mat[,rownames(meta_all)]
 
 write.csv(count_mat, here("../data/Amplicon/count_mat_NEW.csv"), quote = FALSE)
 write.csv(taxonomy_its, here("../data/Amplicon/taxa_full_NEW.csv"), quote = FALSE)
@@ -197,7 +202,7 @@ saveRDS(meta_all[roots,], here("RDS/meta_r_its.rds"))
 ####CLEAN UP ITS TAXONOMY
 ###Now proceed with ITS data
 #Clean and transform to nicer format
-taxonomy_its2 <- cbind(SOTU=paste0("SOTU", 1:nrow(taxonomy_its)), taxonomy_its)
+taxonomy_its2 <- as.data.frame(cbind(SOTU=paste0("SOTU", 1:nrow(taxonomy_its)), taxonomy_its))
 
 #Time for some clean-up of the tax table (to make the unknown annotations the same as for the RNA-Seq data)
 taxonomy_its2$Family <- ifelse(grepl("Incertae", taxonomy_its2$Family), paste0("Uncertain.", taxonomy_its2$Genus), taxonomy_its2$Family)
@@ -316,6 +321,7 @@ saveRDS(kos_n_sum, here("RDS/kos_n_sum.rds"))
 
 saveRDS(ko_annot, here("RDS/kos_annot.rds"))
 
+dir.create(here("Figures"))
 
 
 

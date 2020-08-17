@@ -40,11 +40,11 @@ plot_ordination(ps_ctrl, c.ord, type = "samples", color = "SampleType", shape = 
   scale_color_manual(values = brewer.pal(8,"Dark2")[1:2])+
   ggformat_pca
 
-ggsave(here("Fig2c_PCoA.pdf"), width = 6, height = 3)
+ggsave(here("Figures/Fig2c_PCoA.pdf"), width = 6, height = 3)
 
 ######Mantel & Procrustes
 ##Import vst transformed RNA control data (Script Figure2d.R needs to be run first)
-count_mat_rna <- readRDS(here("../Prepare_first/RDS/vsd_sum_all.rds"))
+count_mat_rna <- readRDS(here("RDS/vsd_sum_all.rds"))
 
 #adjust RNA names
 colnames(count_mat_rna) <- gsub("Roots", "its.root", colnames(count_mat_rna))

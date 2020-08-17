@@ -2,15 +2,15 @@ library(here)
 library(DESeq2)
 library(ggplot2)
 source(here("../src/ggplot_format.R"))
-source(here("../src/Rtoolbox/src/utilsDE.r"))
-source(here("../src/Rtoolbox/src/plotUpAndDown.R"))
+source(here("../src/Rtoolbox/old/utilsDE.r"))
+source(here("../src/Rtoolbox/old/plotUpAndDown.R"))
 source(here("../src/UPSCb-common/src/R/gopher.R"))
-source(here("../src/Rtoolbox/src/plotEnrichedTreemap.R"))
+source(here("../src/Rtoolbox/old/plotEnrichedTreemap.R"))
 
 #Import KEGG ortholog data
-kos_r_sum <- readRDS(here("../Prepare_first/RDS/kos_r_sum.rds"))
+kos_r_sum <- readRDS(here("RDS/kos_r_sum.rds"))
 
-meta_r_sum <- readRDS(here("../Prepare_first/RDS/meta_r_sum.rds"))
+meta_r_sum <- readRDS(here("RDS/meta_r_sum.rds"))
 rownames(meta_r_sum) <- meta_r_sum$SampleID
 meta_r_sum$Group2 <- as.factor(paste(meta_r_sum$treatment, meta_r_sum$date, sep="_"))
 meta_r_sum$Group2 <- factor(meta_r_sum$Group2, levels = c("Control_Early_June","Control_Late_June","Control_August","Control_October",
@@ -85,7 +85,7 @@ plotUpAndDown(fert25_vs_control.res.filter)+
   #coord_cartesian(ylim = c(-750, 750))+
   ggtitle("25 years vs Control")+
   ggformat
-ggsave(here("Fig7a_25vsC.pdf"), width = 3.6, height = 5)
+ggsave(here("Figures/Fig7a_25vsC.pdf"), width = 3.6, height = 5)
 
 ##Investigate how many KOs are common between timepoints
 fert25_vs_C.T1 <- as.data.frame(fert25_vs_control.res.filter[[1]])
@@ -127,11 +127,11 @@ saveRDS(fert25_vs_C.ALLtp.DOWN, here("RDS/fert25_vs_C.ALLtp.DOWN.rds"))
 enr.UP <- gopher(fert25_vs_C.ALLtp.UP_names, task = list("ko_pathway"), alpha=0.05, url = "ko", endpoint = "enrichment")
 enr.DOWN <- gopher(fert25_vs_C.ALLtp.DOWN_names, task = list("ko_pathway"), alpha=0.05, url = "ko", endpoint = "enrichment")
 
-pdf(here("Fig7b_TreemapUp.pdf"), width = 10, height = 7)
+pdf(here("Figures/Fig7b_TreemapUp.pdf"), width = 10, height = 7)
 plotEnrichedTreemap(enr.UP, enrichment = "ko_pathway", de = "up", sizeCol = "nt")
 dev.off()
 
-pdf(here("Fig7b_TreemapDown.pdf"), width = 10, height = 7)
+pdf(here("Figures/Fig7b_TreemapDown.pdf"), width = 10, height = 7)
 plotEnrichedTreemap(enr.DOWN, enrichment = "ko_pathway", de = "down", sizeCol = "nt")
 dev.off()
 

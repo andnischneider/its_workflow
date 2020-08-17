@@ -8,11 +8,11 @@ source(here("../src/ggplot_format.R"))
 
 ##RNA first
 #Import summed count matrix
-rna_r_sum <- readRDS(here("../Prepare_first/RDS/rna_r_sum.rds"))
+rna_r_sum <- readRDS(here("RDS/rna_r_sum.rds"))
 #Taxonomy
-rna_tax_r <- readRDS(here("../Prepare_first/RDS/annot_tax_filt.rds"))
+rna_tax_r <- readRDS(here("RDS/annot_tax_filt.rds"))
 #Metadata
-rna_meta_r_sum <- readRDS(here("../Prepare_first/RDS/meta_r_sum.rds"))
+rna_meta_r_sum <- readRDS(here("RDS/meta_r_sum.rds"))
 rownames(rna_meta_r_sum) <- rna_meta_r_sum$SampleID
 
 #Turn count mat into proportions for visualization
@@ -80,17 +80,17 @@ ggplot(rna_r_fam2_top12_mean, aes(x = Date, y = Proportion))+
   ggformat+
   theme(axis.text.x = element_text(angle = 90))
 
-ggsave(here("Fig4d_RNA_Area.pdf"), width = 8, height = 8)
+ggsave(here("Figures/Fig5a_RNA_Area.pdf"), width = 8, height = 8)
 
 #######################################################
 ###Now the same procedure with the ITS data
-its_r_sum <- readRDS(here("../Prepare_first/RDS/count_mat_r.rds"))
+its_r_sum <- readRDS(here("RDS/count_mat_r.rds"))
 #Taxonomy
-its_tax_r <- readRDS("../Prepare_first/RDS/taxonomy_cleaned_adjusted.rds")
+its_tax_r <- readRDS("RDS/taxonomy_cleaned_adjusted.rds")
 its_tax_r <- its_tax_r[rownames(its_tax_r)%in%rownames(its_r_sum),]
 rownames(its_r_sum) <- its_tax_r$SOTU
 #Metadata
-its_meta_r_sum <- readRDS(here("../Prepare_first/RDS/meta_r_its.rds"))
+its_meta_r_sum <- readRDS(here("RDS/meta_r_its.rds"))
 rownames(its_meta_r_sum) <- its_meta_r_sum$SampleID
 its_meta_r_sum$Group <- paste(its_meta_r_sum$Timepoint, its_meta_r_sum$Treatment, sep = "_")
 
@@ -161,31 +161,31 @@ ggplot(its_r_fam2_top12_mean, aes(x = Timepoint, y = Proportion))+
   ggformat+
   theme(axis.text.x = element_text(angle = 90))
 
-ggsave(here("Fig4d_ITS_Area.pdf"), width = 8, height = 8)
+ggsave(here("Figures/Fig5a_ITS_Area.pdf"), width = 8, height = 8)
 
-##In total we need 18 colors
-colors18 <- c("#618cce",
-              "#65b344",
-              "#a757c8",
-              "#b8b343",
-              "#606dda",
-              "#dd9435",
-              "#7d5a9e",
-              "#5ebf8a",
-              "#d14698",
-              "#3a814f",
-              "#d44458",
-              "#4bbdd1",
-              "#cd5530",
-              "#cd8cd8",
-              "#797e35",
-              "#9d4660",
-              "#b97a4b",
-              "#df839a")
-
-pdf(here("colors18.pdf"))
-show_col(colors18)
-dev.off()
+# ##In total we need 18 colors
+# colors18 <- c("#618cce",
+#               "#65b344",
+#               "#a757c8",
+#               "#b8b343",
+#               "#606dda",
+#               "#dd9435",
+#               "#7d5a9e",
+#               "#5ebf8a",
+#               "#d14698",
+#               "#3a814f",
+#               "#d44458",
+#               "#4bbdd1",
+#               "#cd5530",
+#               "#cd8cd8",
+#               "#797e35",
+#               "#9d4660",
+#               "#b97a4b",
+#               "#df839a")
+# 
+# pdf(here("colors18.pdf"))
+# show_col(colors18)
+# dev.off()
 
 
 

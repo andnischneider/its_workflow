@@ -8,7 +8,7 @@ source(here("../src/ggplot_format.R"))
 fert25_vs_C.ALLtp.UP <- readRDS(here("RDS/fert25_vs_C.ALLtp.UP.rds"))
 
 #Import taxonomic annotations
-annot_tax_filt <- readRDS(here("../Prepare_first/RDS/annot_tax_filt.rds"))
+annot_tax_filt <- readRDS(here("RDS/annot_tax_filt.rds"))
 ##Import functional annotations
 annot_fun <- read.delim(here("../data/RNA/annotation_results.emapper.annotations"), header = FALSE)
 annot_fun$V9 <- gsub("ko:", "", annot_fun$V9)
@@ -19,10 +19,10 @@ annot_fun_up <- annot_fun_up[annot_fun_up$V1%in%annot_tax_filt$gene,]
 annot_fun_up$Family <- annot_tax_filt$family[match(annot_fun_up$V1, annot_tax_filt$gene)]
 
 #Import meta
-meta_r_sum <- readRDS(here("../Prepare_first/RDS/meta_r_sum.rds"))
+meta_r_sum <- readRDS(here("RDS/meta_r_sum.rds"))
 
 #Import transcript level counts
-rna_r_sum <- readRDS(here("../Prepare_first/RDS/rna_r_sum.rds"))
+rna_r_sum <- readRDS(here("RDS/rna_r_sum.rds"))
 #Extract transcript counts associated with upregulated KOs
 rna_r_sum_up <- rna_r_sum[as.character(annot_fun_up$V1),]
 #Select only 25year samples
@@ -90,7 +90,7 @@ ggplot(rna_r_sum_up_fam_m2, aes(x = Spec, y = Percentage, fill = Family))+
                                "#df8093"))+
   ggformat
 
-ggsave(here("Fig7c_UP.pdf"), width = 5, height = 6)
+ggsave(here("Figures/Fig7c_UP.pdf"), width = 5, height = 6)
 
 ############################################
 ########DOWN
@@ -157,25 +157,25 @@ ggplot(rna_r_sum_down_fam_m2, aes(x = Spec, y = Percentage, fill = Family))+
                                "#df8093"))+
   ggformat
 
-ggsave(here("Fig7c_DOWN.pdf"), width = 5, height = 6)
+ggsave(here("Figures/Fig7c_DOWN.pdf"), width = 5, height = 6)
 
-pdf(here("15colors.pdf"))
-scales::show_col(c("#a4b349",
-                   "#7561d0",
-                   "#5bb84d",
-                   "#c158bb",
-                   "#4a864a",
-                   "#d44270",
-                   "#52bea3",
-                   "#d14d33",
-                   "#539dd4",
-                   "#d59c41",
-                   "#7d7bc5",
-                   "#7e722c",
-                   "#dc85b0",
-                   "#c27250",
-                   "#9e4b6d"))
-dev.off()
+# pdf(here("15colors.pdf"))
+# scales::show_col(c("#a4b349",
+#                    "#7561d0",
+#                    "#5bb84d",
+#                    "#c158bb",
+#                    "#4a864a",
+#                    "#d44270",
+#                    "#52bea3",
+#                    "#d14d33",
+#                    "#539dd4",
+#                    "#d59c41",
+#                    "#7d7bc5",
+#                    "#7e722c",
+#                    "#dc85b0",
+#                    "#c27250",
+#                    "#9e4b6d"))
+# dev.off()
 
 
 
