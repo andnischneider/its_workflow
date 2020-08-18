@@ -4,7 +4,7 @@ This repository contains code to analyse the ITS amplicon sequencing data with D
 
 ## Repository contents
 
-The repository consists of two units that are run separately:
+The repository consists of two units that are run separately, and an additional folder with R scripts for analysis and plotting of the results:
 
 ### 1 demultiplex_wf -> download and demultiplex raw data
 
@@ -41,6 +41,6 @@ snakemake -s $(pwd)/workflow/Snakefile -pr -j 4 --use-conda
 This will output the final count matrix and other results (such as sequences for every Swarm OTU and taxonomic assignments)
 into the results/ folder.
 
-### 3 analysis -> R scripts to analyse ITS and RNA data
+### analysis -> R scripts to analyse ITS and RNA data
 
 The folder contains scripts to reproduce the figures in the publication.
