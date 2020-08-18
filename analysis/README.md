@@ -10,7 +10,7 @@ Each of the scripts can be run independently, once **Prepare_ALL.R** has been fu
 
 The name of the folders and scripts indicate which figure will be reproduced with the contained code. Before any of the figures can be plotted, the data has to be processed using the **Prepare_ALL.R** script
 
-Additionally, some of the output files from the RNA-Seq metatranscriptomic workflow have to be copied into *data/RNA*. The following files are needed to reproduce all figures:
+Additionally, some of the output files from the (RNA-Seq metatranscriptomic workflow) [https://bitbucket.org/scilifelab-lts/n_street_1801/src/master/] have to be copied into *data/RNA*. The following files are needed to reproduce all figures:
 
 Assembly_2012.raw.tsv
 
@@ -21,3 +21,6 @@ Assembly_2012.tpm.tsv
 kingdom.Fungi.kos.raw.tsv
 
 annotation_results.emapper.annotations
+
+
+All figures not found here are available in the (bitbucket repository) [https://bitbucket.org/scilifelab-lts/n_street_1801/src/master/] for the same publication.
