@@ -23,4 +23,4 @@ kingdom.Fungi.kos.raw.tsv
 annotation_results.emapper.annotations
 
 
-All figures not found here are available in the [bitbucket repository](https://bitbucket.org/scilifelab-lts/n_street_1801/src/master/) for the same publication.
+The remaining code for all figures not found here are available in the [bitbucket repository](https://bitbucket.org/scilifelab-lts/n_street_1801/src/master/) for the same publication.
