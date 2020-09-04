@@ -21,7 +21,7 @@ with the demultiplexed data, we need to move it from the _demultiplex_wf_ subfol
 
 ```bash
 mkdir $(pwd)/data
-mv $(pwd)/demultiplex_wf/data/ $(pwd)/data
+mv $(pwd)/demultiplex_wf/data/ $(pwd)/
 ```
 Next we will create a conda environment ("its_wf") needed to execute the snakemake workflow,
 and then activate it:
