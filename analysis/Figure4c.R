@@ -30,6 +30,7 @@ counts_sum_melted_rna2 <- merge.data.frame(counts_sum_melted_rna, meta_r_sum, by
 counts_sum_melted_rna2 <- merge.data.frame(counts_sum_melted_rna2, annot_tax_filt_ps, by = "gene")
 
 counts_sum_genus_rna <- acast(counts_sum_melted_rna2, genus~SampleID, value.var = "Count", fun.aggregate = sum)
+counts_sum_genus_rna <- counts_sum_genus_rna[!grepl("Unclassified", rownames(counts_sum_genus_rna)),]
 shannon_root_genus_rna <- cbind(meta_r_sum, Shannon=diversity(counts_sum_genus_rna, MARGIN = 2))
 
 taxonomy_its3 <- readRDS(here("RDS/taxonomy_cleaned_adjusted.rds"))
@@ -51,6 +52,7 @@ counts_sum_melted_its2 <- merge.data.frame(counts_sum_melted_its2, taxonomy_its3
 
 ###Now proceed with ITS data
 counts_sum_genus_its <- acast(counts_sum_melted_its2, Genus~SampleID, value.var = "Count", fun.aggregate = sum)
+counts_sum_genus_its <- counts_sum_genus_its[!grepl("Unclassified", rownames(counts_sum_genus_its)),]
 shannon_root_genus_its <- cbind(meta_r_its, Shannon=diversity(counts_sum_genus_its, MARGIN = 2))
 shannon_root_genus_its$SampleID <- as.character(shannon_root_genus_its$SampleID)
 
