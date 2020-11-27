@@ -83,14 +83,14 @@ ggsave(here("Figures/Fig4c_Shannon_scatter.pdf"), width = 2.2, height = 2.4)
 cor(root_shannon_genus_both$Shannon_ITS, root_shannon_genus_both$Shannon_RNA)
 
 #Test for significance; RNA treatment
-shannon_model_rna <- lme(Shannon_RNA~treatment, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
+shannon_model_rna <- lme(log(Shannon_RNA)~treatment, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
 anova(shannon_model_rna)
-#Not really
-#shannon_posthoc <- glht(shannon_model_rna, linfct=mcp(treatment="Tukey"))
-#summary(shannon_posthoc)
+#Yes
+shannon_posthoc <- glht(shannon_model_rna, linfct=mcp(treatment="Tukey"))
+summary(shannon_posthoc)
 
 #Test for significance; ITS treatment
-shannon_model_its <- lme(Shannon_ITS~treatment, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
+shannon_model_its <- lme(log(Shannon_ITS)~treatment, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
 anova(shannon_model_its)
 #Yes
 shannon_posthoc <- glht(shannon_model_its, linfct=mcp(treatment="Tukey"))
@@ -99,14 +99,14 @@ summary(shannon_posthoc)
 
 #Test for significance; RNA timepoint
 root_shannon_genus_both$date <- factor(root_shannon_genus_both$date, levels = c("Early_June", "Late_June", "August", "October"))
-shannon_model_rna_d <- lme(Shannon_RNA~date, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
+shannon_model_rna_d <- lme(log(Shannon_RNA)~date, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
 anova(shannon_model_rna_d)
-#Nope
+#No significance
 #shannon_posthoc_d <- glht(shannon_model_rna_d, linfct=mcp(date="Tukey"))
 #summary(shannon_posthoc_d)
 
 #Test for significance; ITS timepoint
-shannon_model_its_d <- lme(Shannon_ITS~date, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
+shannon_model_its_d <- lme(log(Shannon_ITS)~date, random = ~1|plot, data = root_shannon_genus_both, method = "ML")
 anova(shannon_model_its_d)
 #Nope
 #shannon_posthoc_its_d <- glht(shannon_model_its_d, linfct=mcp(date="Tukey"))
