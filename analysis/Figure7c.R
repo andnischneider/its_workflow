@@ -2,6 +2,7 @@ library(here)
 library(DESeq2)
 library(ggplot2)
 library(reshape2)
+library(tidyverse)
 source(here("../src/ggplot_format.R"))
 
 ##Upregulated KOs
@@ -13,7 +14,14 @@ annot_tax_filt <- readRDS(here("RDS/annot_tax_filt.rds"))
 annot_fun <- read.delim(here("../data/RNA/annotation_results.emapper.annotations"), header = FALSE)
 annot_fun$V9 <- gsub("ko:", "", annot_fun$V9)
 #Select only relevant/upregulated
-annot_fun_up <- annot_fun[annot_fun$V9%in%fert25_vs_C.ALLtp.UP$KO,][,c(1,9)]
+annot_fun2 <- annot_fun %>% 
+  select(V1, V9) %>% 
+  filter(V9!="")
+annot_fun3 <- as.data.frame(cbind(annot_fun2$V1, str_split_fixed(annot_fun2$V9, pattern = ",", n = max(str_count(annot_fun2$V9, "K")))))
+
+annot_fun4 <- melt(annot_fun3, id.vars = "V1", value.name = "KO")[,-2]
+
+annot_fun_up <- annot_fun4[annot_fun4$KO%in%fert25_vs_C.ALLtp.UP$KO,]
 #Select filtered transcripts
 annot_fun_up <- annot_fun_up[annot_fun_up$V1%in%annot_tax_filt$gene,]
 annot_fun_up$Family <- annot_tax_filt$family[match(annot_fun_up$V1, annot_tax_filt$gene)]
@@ -98,7 +106,7 @@ ggsave(here("Figures/Fig7c_UP.pdf"), width = 5, height = 6)
 fert25_vs_C.ALLtp.DOWN <- readRDS(here("RDS/fert25_vs_C.ALLtp.DOWN.rds"))
 
 #Select only relevant/downregulated
-annot_fun_down <- annot_fun[annot_fun$V9%in%rownames(fert25_vs_C.ALLtp.DOWN),][,c(1,9)]
+annot_fun_down <- annot_fun4[annot_fun4$KO%in%fert25_vs_C.ALLtp.DOWN$KO,]
 #Select filtered transcripts
 annot_fun_down <- annot_fun_down[annot_fun_down$V1%in%annot_tax_filt$gene,]
 annot_fun_down$Family <- annot_tax_filt$family[match(annot_fun_down$V1, annot_tax_filt$gene)]
