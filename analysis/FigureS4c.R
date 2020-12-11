@@ -25,6 +25,7 @@ counts_sum_melted_rna_n2 <- merge.data.frame(counts_sum_melted_rna_n, meta_n_sum
 counts_sum_melted_rna_n2 <- merge.data.frame(counts_sum_melted_rna_n2, annot_tax_filt_n, by = "gene", all.x = TRUE)
 
 counts_sum_genus_rna_n <- acast(counts_sum_melted_rna_n2, genus~SampleID, value.var = "Count", fun.aggregate = sum)
+counts_sum_genus_rna_n <- counts_sum_genus_rna_n[!grepl("Unclassified", rownames(counts_sum_genus_rna_n)),]
 shannon_needl_genus_rna <- cbind(meta_n_sum, Shannon=diversity(counts_sum_genus_rna_n, MARGIN = 2))
 
 taxonomy_its3 <- readRDS(here("RDS/taxonomy_cleaned_adjusted.rds"))
@@ -46,6 +47,7 @@ counts_sum_melted_its_n2 <- merge.data.frame(counts_sum_melted_its_n2, taxonomy_
 
 ###Cast matrix and calculate shannon
 counts_sum_genus_its_n <- acast(counts_sum_melted_its_n2, Genus~SampleID, value.var = "Count", fun.aggregate = sum)
+counts_sum_genus_its_n <- counts_sum_genus_its_n[!grepl("Unclassified", rownames(counts_sum_genus_its_n)),]
 shannon_needl_genus_its_n <- cbind(meta_n_its, Shannon=diversity(counts_sum_genus_its_n, MARGIN = 2))
 shannon_needl_genus_its_n$SampleID <- as.character(shannon_needl_genus_its_n$SampleID)
 
